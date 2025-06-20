@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import (QMainWindow, QAction, QFileDialog, QDockWidget,
-                            QToolBar, QMessageBox, QVBoxLayout, QWidget)
+                            QToolBar, QMessageBox, QVBoxLayout, QWidget, QMenu)
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtGui import QIcon
 
 from .canvas import NetworkCanvas
 from .component_panel import ComponentPanel
 from .property_panel import PropertyPanel
+from .toolbar import TemplateToolBar
+from simulation.simulator import NetworkSimulator
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -71,6 +73,16 @@ class MainWindow(QMainWindow):
         self.simulate_action = QAction("Run &Simulation", self)
         self.simulate_action.setShortcut("F5")
         self.simulate_action.triggered.connect(self.run_simulation)
+        
+        # Template actions
+        self.load_5g_core_template = QAction("5G Core Test", self)
+        self.load_5g_core_template.triggered.connect(lambda: self.load_template("5g_core_test"))
+        
+        self.load_5g_ran_template = QAction("5G RAN Test", self)
+        self.load_5g_ran_template.triggered.connect(lambda: self.load_template("5g_ran_test"))
+        
+        self.load_full_5g_template = QAction("Complete 5G Network", self)
+        self.load_full_5g_template.triggered.connect(lambda: self.load_template("full_5g_network"))
 
         # Help actions
         self.about_action = QAction("&About", self)
@@ -88,6 +100,12 @@ class MainWindow(QMainWindow):
         self.export_menu = self.file_menu.addMenu("&Export")
         self.export_menu.addAction(self.export_docker_action)
         self.export_menu.addAction(self.export_mininet_action)
+
+        # Templates submenu
+        self.templates_menu = self.file_menu.addMenu("Load &Template")
+        self.templates_menu.addAction(self.load_5g_core_template)
+        self.templates_menu.addAction(self.load_5g_ran_template)
+        self.templates_menu.addAction(self.load_full_5g_template)
 
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.exit_action)
@@ -108,6 +126,10 @@ class MainWindow(QMainWindow):
         self.main_toolbar.addAction(self.save_action)
         self.main_toolbar.addSeparator()
         self.main_toolbar.addAction(self.simulate_action)
+        
+        # Templates toolbar
+        self.template_toolbar = TemplateToolBar(self)
+        self.addToolBar(self.template_toolbar)
 
     def create_statusbar(self):
         self.statusBar().showMessage("Ready")
@@ -178,6 +200,25 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"Exported to Mininet: {filename}", 3000)
             except Exception as e:
                 QMessageBox.critical(self, "Export Error", f"Failed to export: {str(e)}")
+
+    def load_template(self, template_name):
+        """Load a predefined network topology template"""
+        reply = QMessageBox.question(
+            self, "Load Template",
+            f"Are you sure you want to load the {template_name.replace('_', ' ')} template? This will clear your current network.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            try:
+                simulator = NetworkSimulator(self.canvas)
+                result = simulator.load_template(template_name)
+                if result:
+                    self.statusBar().showMessage(f"Template {template_name} loaded successfully", 3000)
+                else:
+                    self.statusBar().showMessage(f"Failed to load template {template_name}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Template Error", f"Failed to load template: {str(e)}")
 
     def run_simulation(self):
         from simulation.simulator import NetworkSimulator
