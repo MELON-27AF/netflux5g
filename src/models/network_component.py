@@ -17,7 +17,7 @@ class NetworkComponent(QGraphicsItem):
         self.width = 100
         self.height = 80
         self.color = QColor(200, 200, 255)
-        self.selected_color = QColor(255, 255, 0)
+        self.selected_color = QColor(0, 120, 215)  # Changed from yellow to a blue color
         
         # Icon property
         self.icon_path = None
@@ -51,7 +51,8 @@ class NetworkComponent(QGraphicsItem):
     def paint(self, painter, option, widget):
         # Only draw selection indicator if selected
         if self.isSelected():
-            pen = QPen(Qt.yellow, 2, Qt.DashLine)
+            # Use a more subtle blue selection indicator instead of yellow
+            pen = QPen(self.selected_color, 2, Qt.DashLine)
             painter.setPen(pen)
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(self.boundingRect())
