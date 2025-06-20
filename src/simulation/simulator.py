@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QPointF
 from models.component_factory import ComponentFactory
+from utils import calculate_latency, calculate_throughput, calculate_resource_utilization
 
 class NetworkSimulator:
     def __init__(self, canvas):
@@ -44,10 +45,7 @@ class NetworkSimulator:
         Returns:
             dict: Simulation data and results
         """
-        # Generate some sample simulation data
-        # This should be replaced with actual simulation logic
-        
-        # Count component types
+        # Count component types for analysis
         component_counts = {}
         for component in components:
             comp_type = component.component_type
@@ -55,8 +53,13 @@ class NetworkSimulator:
                 component_counts[comp_type] += 1
             else:
                 component_counts[comp_type] = 1
+        
+        # Calculate network metrics based on the topology using utility functions
+        latency_metrics = calculate_latency(len(components), len(connections), component_counts)
+        throughput_metrics = calculate_throughput(len(components), len(connections), component_counts)
+        resource_metrics = calculate_resource_utilization(len(components), len(connections), component_counts)
                 
-        # Generate sample metrics based on topology
+        # Generate simulation data based on topology and calculations
         simulation_data = {
             "network_stats": {
                 "Total Components": len(components),
@@ -64,41 +67,77 @@ class NetworkSimulator:
                 "Component Distribution": component_counts
             },
             "performance_metrics": {
-                "Latency": {
-                    "Average End-to-End": f"{50 + (len(components) * 2)} ms",
-                    "Core Network": f"{20 + (len(connections) // 2)} ms",
-                    "RAN": f"{15 + (len(components) // 3)} ms"
-                },
-                "Throughput": {
-                    "Aggregate": f"{(len(components) * 100) // 2} Mbps",
-                    "Per User": f"{100 - (len(components) * 2)} Mbps"
-                },
-                "Resource Utilization": {
-                    "CPU": f"{30 + (len(components) * 3)}%",
-                    "Memory": f"{25 + (len(components) * 2)}%"
-                }
+                "Latency": latency_metrics,
+                "Throughput": throughput_metrics,
+                "Resource Utilization": resource_metrics
             },
             "simulation_time": "00:00:30",
             "component_specific_data": {}
         }
         
-        # Add some sample data for specific components
+        # Add component-specific data based on component type
         for component in components:
-            comp_id = component.id if hasattr(component, 'id') else id(component)
+            comp_id = component.component_id if hasattr(component, 'component_id') else id(component)
             comp_type = component.component_type if hasattr(component, 'component_type') else "unknown"
             
-            # Generate some fake data based on component type
-            if "core" in comp_type.lower():
+            # Generate data based on component type
+            if "core" in comp_type.lower() or comp_type in ["amf", "smf", "upf", "pcf", "udm", "ausf", "nrf"]:
+                # Core network components
+                connection_count = sum(1 for c in connections if c.source == component or c.target == component)
+                load_percentage = 30 + (connection_count * 5)
+                throughput = 100 + (connection_count * 20)
+                
                 simulation_data["component_specific_data"][comp_id] = {
                     "type": comp_type,
-                    "load": f"{30 + (hash(comp_id) % 50)}%",
-                    "connections": sum(1 for c in connections if c.source == component or c.target == component)
+                    "load": f"{min(95, load_percentage)}%",
+                    "throughput": f"{throughput} Mbps",
+                    "connections": connection_count
                 }
-            elif "ran" in comp_type.lower() or "antenna" in comp_type.lower():
+                
+            elif comp_type in ["gnb", "ue"] or "ran" in comp_type.lower() or "antenna" in comp_type.lower():
+                # RAN components
+                if comp_type == "gnb":
+                    # gNB specific metrics
+                    power = component.properties.get("power", 20) if hasattr(component, 'properties') else 20
+                    connected_ues = sum(1 for c in connections if (c.source == component and getattr(c.target, 'component_type', '') == "ue") or 
+                                       (c.target == component and getattr(c.source, 'component_type', '') == "ue"))
+                    
+                    simulation_data["component_specific_data"][comp_id] = {
+                        "type": comp_type,
+                        "signal_power": f"{power} dBm",
+                        "connected_ues": connected_ues,
+                        "bandwidth": f"{100 + (connected_ues * 20)} MHz"
+                    }
+                elif comp_type == "ue":
+                    # UE specific metrics
+                    connected_gnb = next((c for c in connections if 
+                                         (c.source == component and getattr(c.target, 'component_type', '') == "gnb") or
+                                         (c.target == component and getattr(c.source, 'component_type', '') == "gnb")), None)
+                    
+                    signal_strength = -70
+                    if connected_gnb:
+                        # Calculate signal strength based on "distance" (simplified)
+                        gnb = c.source if getattr(c.source, 'component_type', '') == "gnb" else c.target
+                        power = gnb.properties.get("power", 20) if hasattr(gnb, 'properties') else 20
+                        # A very simplified signal strength calculation
+                        signal_strength = -70 + (power / 2)
+                    
+                    simulation_data["component_specific_data"][comp_id] = {
+                        "type": comp_type,
+                        "signal_strength": f"{signal_strength} dBm",
+                        "data_rate": f"{80 + (signal_strength + 100)} Mbps"  # Higher signal = higher data rate
+                    }
+            
+            elif comp_type in ["switch", "router"]:
+                # Network infrastructure components
+                connection_count = sum(1 for c in connections if c.source == component or c.target == component)
+                packet_rate = 1000 * connection_count
+                
                 simulation_data["component_specific_data"][comp_id] = {
                     "type": comp_type,
-                    "signal_strength": f"{-70 - (hash(comp_id) % 30)} dBm",
-                    "users": hash(comp_id) % 10 + 1
+                    "packet_rate": f"{packet_rate} pps",
+                    "connections": connection_count,
+                    "load": f"{min(95, 30 + (connection_count * 10))}%"
                 }
         
         return simulation_data
