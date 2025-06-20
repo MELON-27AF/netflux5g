@@ -58,7 +58,10 @@ class NetworkComponent(QGraphicsItem):
         if self.icon_pixmap:
             icon_x = -self.icon_size/2
             icon_y = -self.height/2 + 5  # Position icon at top with small padding
-            painter.drawPixmap(icon_x, icon_y, self.icon_size, self.icon_size, self.icon_pixmap)
+            # Create a QRectF for the icon position and size
+            icon_rect = QRectF(icon_x, icon_y, self.icon_size, self.icon_size)
+            # Draw pixmap with a target rectangle
+            painter.drawPixmap(icon_rect, self.icon_pixmap, QRectF(self.icon_pixmap.rect()))
 
         # Draw component type
         painter.setFont(QFont("Arial", 10, QFont.Bold))
