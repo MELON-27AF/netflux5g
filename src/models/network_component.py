@@ -43,16 +43,12 @@ class NetworkComponent(QGraphicsItem):
         return QRectF(-self.width/2, -self.height/2, self.width, self.height)
 
     def paint(self, painter, option, widget):
-        # Draw the component box
+        # Only draw selection indicator if selected
         if self.isSelected():
-            painter.setBrush(QBrush(self.selected_color))
-            pen = QPen(Qt.black, 2)
-        else:
-            painter.setBrush(QBrush(self.color))
-            pen = QPen(Qt.black, 1)
-
-        painter.setPen(pen)
-        painter.drawRect(self.boundingRect())
+            pen = QPen(Qt.yellow, 2, Qt.DashLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(self.boundingRect())
         
         # Draw icon if available
         if self.icon_pixmap:
@@ -62,17 +58,11 @@ class NetworkComponent(QGraphicsItem):
             icon_rect = QRectF(icon_x, icon_y, self.icon_size, self.icon_size)
             # Draw pixmap with a target rectangle
             painter.drawPixmap(icon_rect, self.icon_pixmap, QRectF(self.icon_pixmap.rect()))
-
-        # Draw component type
-        painter.setFont(QFont("Arial", 10, QFont.Bold))
-        type_rect = QRectF(-self.width/2, -self.height/2 + self.icon_size + 5, 
-                          self.width, 20)
-        painter.drawText(type_rect, Qt.AlignCenter, self.component_type.upper())
-
-        # Draw component name
+        
+        # Draw component name below the icon for identification
         painter.setFont(QFont("Arial", 8))
         name = self.properties.get("name", f"{self.component_type}_{self.component_id}")
-        name_rect = QRectF(-self.width/2, 0, self.width, self.height/2)
+        name_rect = QRectF(-self.width/2, self.icon_size + 5, self.width, 20)
         painter.drawText(name_rect, Qt.AlignCenter, name)
 
     def itemChange(self, change, value):
