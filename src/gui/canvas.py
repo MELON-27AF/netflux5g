@@ -23,6 +23,7 @@ class NetworkCanvas(QGraphicsView):
         # Network components
         self.components = []
         self.links = []
+        self.connections = []  # Initialize the connections list
 
         # Selection mode
         self.current_mode = "select"  # "select", "add_component", "add_link"
@@ -93,12 +94,30 @@ class NetworkCanvas(QGraphicsView):
         self.scene.clear()
         self.components.clear()
         self.links.clear()
+        self.connections.clear()  # Clear connections
         self.draw_grid()
+
+    def add_connection(self, connection):
+        """Add a connection between components"""
+        self.connections.append(connection)
+        self.scene.addItem(connection)
+        return connection
+
+    def remove_connection(self, connection):
+        """Remove a connection from the canvas"""
+        if connection in self.connections:
+            self.connections.remove(connection)
+            self.scene.removeItem(connection)
+
+    def get_connections(self):
+        """Return all connections in the canvas"""
+        return self.connections
 
     def save_to_file(self, filename):
         data = {
             "components": [],
-            "links": []
+            "links": [],
+            "connections": []  # Include connections in the saved data
         }
 
         # Save components
@@ -120,6 +139,15 @@ class NetworkCanvas(QGraphicsView):
                 "properties": link.get_properties()
             }
             data["links"].append(link_data)
+
+        # Save connections
+        for conn in self.connections:
+            conn_data = {
+                "source_id": conn.source_component.id,
+                "target_id": conn.target_component.id,
+                "properties": conn.get_properties() if hasattr(conn, 'get_properties') else {}
+            }
+            data["connections"].append(conn_data)
 
         # Save to file
         with open(filename, 'w') as file:
@@ -167,6 +195,29 @@ class NetworkCanvas(QGraphicsView):
 
                 link = self.add_link(source, target)
                 link.set_properties(link_data.get("properties", {}))
+
+        # Process connections
+        for conn_data in data.get("connections", []):
+            source_id = conn_data.get("source_id")
+            target_id = conn_data.get("target_id")
+
+            if source_id in component_map and target_id in component_map:
+                source = component_map[source_id]
+                target = component_map[target_id]
+
+                # Create connection (implementation depends on your connection creation logic)
+                connection = self._create_connection(source, target, conn_data.get('properties', {}))
+                self.connections.append(connection)
+
+    def _create_component(self, component_type, properties):
+        """Helper method to create a component (placeholder - implement based on your architecture)"""
+        # This would create the appropriate component based on the type
+        pass
+
+    def _create_connection(self, source, target, properties):
+        """Helper method to create a connection (placeholder - implement based on your architecture)"""
+        # This would create a connection between two components
+        pass
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
