@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QMainWindow, QAction, QFileDialog, QDockWidget,
-                            QToolBar, QMessageBox, QVBoxLayout, QWidget, QMenu)
+                            QToolBar, QMessageBox, QVBoxLayout, QWidget, QMenu,
+                            QDialog, QTextEdit, QTabWidget, QLabel, QGridLayout)
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtGui import QIcon
 
@@ -225,13 +226,85 @@ class MainWindow(QMainWindow):
 
         try:
             simulator = NetworkSimulator(self.canvas)
-            result = simulator.run()
+            result, simulation_data = simulator.run()
             if result:
                 self.statusBar().showMessage("Simulation completed successfully", 3000)
+                self.show_simulation_results(simulation_data)
             else:
                 self.statusBar().showMessage("Simulation completed with errors", 3000)
         except Exception as e:
             QMessageBox.critical(self, "Simulation Error", f"Failed to run simulation: {str(e)}")
+
+    def show_simulation_results(self, simulation_data):
+        """Display simulation results in a new window"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Simulation Results")
+        dialog.setMinimumSize(800, 600)
+        
+        layout = QVBoxLayout()
+        
+        # Create tabs for different types of results
+        tabs = QTabWidget()
+        
+        # Summary tab
+        summary_tab = QWidget()
+        summary_layout = QGridLayout()
+        
+        # Add summary information
+        summary_layout.addWidget(QLabel("<h2>Simulation Summary</h2>"), 0, 0)
+        
+        row = 1
+        if 'network_stats' in simulation_data:
+            stats = simulation_data['network_stats']
+            summary_layout.addWidget(QLabel("<b>Network Statistics:</b>"), row, 0)
+            row += 1
+            for key, value in stats.items():
+                summary_layout.addWidget(QLabel(f"{key}:"), row, 0)
+                summary_layout.addWidget(QLabel(f"{value}"), row, 1)
+                row += 1
+        
+        summary_tab.setLayout(summary_layout)
+        tabs.addTab(summary_tab, "Summary")
+        
+        # Performance tab
+        if 'performance_metrics' in simulation_data:
+            perf_tab = QWidget()
+            perf_layout = QVBoxLayout()
+            perf_text = QTextEdit()
+            perf_text.setReadOnly(True)
+            
+            metrics = simulation_data['performance_metrics']
+            perf_content = "<h2>Performance Metrics</h2>"
+            
+            for category, values in metrics.items():
+                perf_content += f"<h3>{category}</h3>"
+                perf_content += "<ul>"
+                for k, v in values.items():
+                    perf_content += f"<li><b>{k}:</b> {v}</li>"
+                perf_content += "</ul>"
+            
+            perf_text.setHtml(perf_content)
+            perf_layout.addWidget(perf_text)
+            perf_tab.setLayout(perf_layout)
+            tabs.addTab(perf_tab, "Performance")
+        
+        # Raw data tab
+        raw_tab = QWidget()
+        raw_layout = QVBoxLayout()
+        raw_text = QTextEdit()
+        raw_text.setReadOnly(True)
+        
+        # Format the raw data for display
+        import json
+        raw_text.setText(json.dumps(simulation_data, indent=2))
+        
+        raw_layout.addWidget(raw_text)
+        raw_tab.setLayout(raw_layout)
+        tabs.addTab(raw_tab, "Raw Data")
+        
+        layout.addWidget(tabs)
+        dialog.setLayout(layout)
+        dialog.exec_()
 
     def show_about(self):
         QMessageBox.about(self, "About NetFlux5G",

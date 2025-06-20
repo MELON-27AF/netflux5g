@@ -7,10 +7,101 @@ class NetworkSimulator:
         self.component_factory = ComponentFactory()
 
     def run(self):
-        """Run the simulation on the current network"""
-        # Here we would add actual simulation logic
-        print("Running simulation on network...")
-        return True
+        """
+        Run the network simulation and return the results
+        
+        Returns:
+            tuple: (success_status, simulation_data)
+        """
+        # This is a placeholder for the actual simulation logic
+        # In a real implementation, you would:
+        # 1. Analyze the network topology from the canvas
+        # 2. Run simulations based on the topology
+        # 3. Collect performance metrics and statistics
+        # 4. Return the results
+        
+        try:
+            # Get all components and connections from the canvas
+            components = self.canvas.components
+            connections = self.canvas.connections
+            
+            # Simulate network traffic and performance
+            simulation_data = self._simulate_network(components, connections)
+            
+            return True, simulation_data
+        except Exception as e:
+            print(f"Simulation error: {str(e)}")
+            return False, {}
+    
+    def _simulate_network(self, components, connections):
+        """
+        Perform the actual network simulation.
+        
+        Args:
+            components: List of network components
+            connections: List of connections between components
+            
+        Returns:
+            dict: Simulation data and results
+        """
+        # Generate some sample simulation data
+        # This should be replaced with actual simulation logic
+        
+        # Count component types
+        component_counts = {}
+        for component in components:
+            comp_type = component.component_type
+            if comp_type in component_counts:
+                component_counts[comp_type] += 1
+            else:
+                component_counts[comp_type] = 1
+                
+        # Generate sample metrics based on topology
+        simulation_data = {
+            "network_stats": {
+                "Total Components": len(components),
+                "Total Connections": len(connections),
+                "Component Distribution": component_counts
+            },
+            "performance_metrics": {
+                "Latency": {
+                    "Average End-to-End": f"{50 + (len(components) * 2)} ms",
+                    "Core Network": f"{20 + (len(connections) // 2)} ms",
+                    "RAN": f"{15 + (len(components) // 3)} ms"
+                },
+                "Throughput": {
+                    "Aggregate": f"{(len(components) * 100) // 2} Mbps",
+                    "Per User": f"{100 - (len(components) * 2)} Mbps"
+                },
+                "Resource Utilization": {
+                    "CPU": f"{30 + (len(components) * 3)}%",
+                    "Memory": f"{25 + (len(components) * 2)}%"
+                }
+            },
+            "simulation_time": "00:00:30",
+            "component_specific_data": {}
+        }
+        
+        # Add some sample data for specific components
+        for component in components:
+            comp_id = component.id if hasattr(component, 'id') else id(component)
+            comp_type = component.component_type if hasattr(component, 'component_type') else "unknown"
+            
+            # Generate some fake data based on component type
+            if "core" in comp_type.lower():
+                simulation_data["component_specific_data"][comp_id] = {
+                    "type": comp_type,
+                    "load": f"{30 + (hash(comp_id) % 50)}%",
+                    "connections": sum(1 for c in connections if c.source == component or c.target == component)
+                }
+            elif "ran" in comp_type.lower() or "antenna" in comp_type.lower():
+                simulation_data["component_specific_data"][comp_id] = {
+                    "type": comp_type,
+                    "signal_strength": f"{-70 - (hash(comp_id) % 30)} dBm",
+                    "users": hash(comp_id) % 10 + 1
+                }
+        
+        return simulation_data
 
     def load_template(self, template_name):
         """Load a predefined network topology template"""
