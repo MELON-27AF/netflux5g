@@ -22,13 +22,19 @@ class NetworkComponent(QGraphicsItem):
         # Icon property
         self.icon_path = None
         self.icon_pixmap = None
-        self.icon_size = 32  # Default icon size
+        self.icon_size = 48  # Using the larger icon size we previously set
+        
+        # Transparency flag for hover and drag
+        self.is_dragging = False
 
         # Set position and flags
         self.setPos(position)
         self.setFlags(QGraphicsItem.ItemIsSelectable |
                      QGraphicsItem.ItemIsMovable |
                      QGraphicsItem.ItemSendsGeometryChanges)
+        
+        # Accept hover events
+        self.setAcceptHoverEvents(True)
 
     def set_icon(self, icon_path):
         """Set the icon for this component"""
@@ -50,17 +56,14 @@ class NetworkComponent(QGraphicsItem):
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(self.boundingRect())
         
-        # Draw icon if available - with larger size
+        # Draw icon if available
         if self.icon_pixmap:
-            # Increase icon size
-            larger_icon_size = 48  # Increased from 32
-            
             # Center the icon horizontally and position it near the top
-            icon_x = -larger_icon_size/2
+            icon_x = -self.icon_size/2
             icon_y = -self.height/2 + 10
             
             # Create a QRectF for the icon position and size
-            icon_rect = QRectF(icon_x, icon_y, larger_icon_size, larger_icon_size)
+            icon_rect = QRectF(icon_x, icon_y, self.icon_size, self.icon_size)
             
             # Draw pixmap with a target rectangle
             painter.drawPixmap(icon_rect, self.icon_pixmap, QRectF(self.icon_pixmap.rect()))
@@ -70,14 +73,33 @@ class NetworkComponent(QGraphicsItem):
             name = self.properties.get("name", f"{self.component_type}_{self.component_id}")
             
             # Position the text immediately below the icon
-            name_rect = QRectF(-self.width/2, icon_y + larger_icon_size + 2, self.width, 20)
+            name_rect = QRectF(-self.width/2, icon_y + self.icon_size + 2, self.width, 20)
             painter.drawText(name_rect, Qt.AlignCenter, name)
+
+    def hoverEnterEvent(self, event):
+        # Set dragging state to true when hover starts
+        # which gives the impression of "picking up" the component
+        self.is_dragging = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        # Reset dragging state when hover ends
+        self.is_dragging = False
+        self.update()
+        super().hoverLeaveEvent(event)
 
     def itemChange(self, change, value):
         # Update connected links when component moves
         if change == QGraphicsItem.ItemPositionChange and self.scene():
+            # Component is being dragged
+            self.is_dragging = True
             for link in self.links:
                 link.update_position()
+        elif change == QGraphicsItem.ItemPositionHasChanged:
+            # Component has been dropped
+            self.is_dragging = False
+            self.update()
 
         return super().itemChange(change, value)
 
