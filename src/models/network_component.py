@@ -50,20 +50,28 @@ class NetworkComponent(QGraphicsItem):
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(self.boundingRect())
         
-        # Draw icon if available
+        # Draw icon if available - with larger size
         if self.icon_pixmap:
-            icon_x = -self.icon_size/2
-            icon_y = -self.height/2 + 5  # Position icon at top with small padding
+            # Increase icon size
+            larger_icon_size = 48  # Increased from 32
+            
+            # Center the icon horizontally and position it near the top
+            icon_x = -larger_icon_size/2
+            icon_y = -self.height/2 + 10
+            
             # Create a QRectF for the icon position and size
-            icon_rect = QRectF(icon_x, icon_y, self.icon_size, self.icon_size)
+            icon_rect = QRectF(icon_x, icon_y, larger_icon_size, larger_icon_size)
+            
             # Draw pixmap with a target rectangle
             painter.drawPixmap(icon_rect, self.icon_pixmap, QRectF(self.icon_pixmap.rect()))
-        
-        # Draw component name below the icon for identification
-        painter.setFont(QFont("Arial", 8))
-        name = self.properties.get("name", f"{self.component_type}_{self.component_id}")
-        name_rect = QRectF(-self.width/2, self.icon_size + 5, self.width, 20)
-        painter.drawText(name_rect, Qt.AlignCenter, name)
+            
+            # Draw component name right below the icon
+            painter.setFont(QFont("Arial", 8))
+            name = self.properties.get("name", f"{self.component_type}_{self.component_id}")
+            
+            # Position the text immediately below the icon
+            name_rect = QRectF(-self.width/2, icon_y + larger_icon_size + 2, self.width, 20)
+            painter.drawText(name_rect, Qt.AlignCenter, name)
 
     def itemChange(self, change, value):
         # Update connected links when component moves
