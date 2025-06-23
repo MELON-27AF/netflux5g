@@ -88,15 +88,15 @@ class ContainerManager:
             comp_type = getattr(component, 'component_type', 'unknown')
             comp_id = getattr(component, 'component_id', id(component))
             
-            name = properties.get("name", f"{comp_type}_{comp_id}")
-              # Use Open5GS Docker images for 5G core components
+            name = properties.get("name", f"{comp_type}_{comp_id}")            # Use Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'open5gs/open5gs:latest',
-                'amf': 'open5gs/open5gs:latest', 
-                'smf': 'open5gs/open5gs:latest',
-                'upf': 'open5gs/open5gs:latest',                'pcf': 'open5gs/open5gs:latest',
-                'udm': 'open5gs/open5gs:latest',
-                'ausf': 'open5gs/open5gs:latest'
+                'nrf': 'registry.gitlab.com/oai/cn5g/open5gs-nrf:latest',
+                'amf': 'registry.gitlab.com/oai/cn5g/open5gs-amf:latest', 
+                'smf': 'registry.gitlab.com/oai/cn5g/open5gs-smf:latest',
+                'upf': 'registry.gitlab.com/oai/cn5g/open5gs-upf:latest',
+                'pcf': 'registry.gitlab.com/oai/cn5g/open5gs-pcf:latest',
+                'udm': 'registry.gitlab.com/oai/cn5g/open5gs-udm:latest',
+                'ausf': 'registry.gitlab.com/oai/cn5g/open5gs-ausf:latest'
             }
             
             image = image_map.get(component.component_type, 'open5gs/open5gs:latest')
