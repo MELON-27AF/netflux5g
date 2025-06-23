@@ -17,6 +17,7 @@ class MainWindow(QMainWindow):
         self.resize(1200, 800)
 
         self.settings = QSettings()
+        self.current_simulator = None  # Track current simulation
 
         self.init_ui()
         self.create_actions()
@@ -75,6 +76,10 @@ class MainWindow(QMainWindow):
         self.simulate_action.setShortcut("F5")
         self.simulate_action.triggered.connect(self.run_simulation)
         
+        self.stop_simulation_action = QAction("Stop Simulation", self)
+        self.stop_simulation_action.triggered.connect(self.stop_simulation)
+        self.stop_simulation_action.setEnabled(False)
+        
         # Template actions
         self.load_5g_core_template = QAction("5G Core Test", self)
         self.load_5g_core_template.triggered.connect(lambda: self.load_template("5g_core_test"))
@@ -114,6 +119,7 @@ class MainWindow(QMainWindow):
         # Simulation menu
         self.simulation_menu = self.menuBar().addMenu("&Simulation")
         self.simulation_menu.addAction(self.simulate_action)
+        self.simulation_menu.addAction(self.stop_simulation_action)
 
         # Help menu
         self.help_menu = self.menuBar().addMenu("&Help")
@@ -127,6 +133,7 @@ class MainWindow(QMainWindow):
         self.main_toolbar.addAction(self.save_action)
         self.main_toolbar.addSeparator()
         self.main_toolbar.addAction(self.simulate_action)
+        self.main_toolbar.addAction(self.stop_simulation_action)
         
         # Templates toolbar
         self.template_toolbar = TemplateToolBar(self)
@@ -225,21 +232,66 @@ class MainWindow(QMainWindow):
         from simulation.simulator import NetworkSimulator
 
         try:
-            simulator = NetworkSimulator(self.canvas)
-            result, simulation_data = simulator.run()
+            # Check if simulation is already running
+            if self.current_simulator:
+                reply = QMessageBox.question(
+                    self, "Simulation Running",
+                    "A simulation is already running. Stop it and start a new one?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    self.stop_simulation()
+                else:
+                    return
+
+            self.current_simulator = NetworkSimulator(self.canvas)
+            
+            # Update UI
+            self.simulate_action.setEnabled(False)
+            self.stop_simulation_action.setEnabled(True)
+            self.statusBar().showMessage("Starting 5G network simulation with containers...")
+            
+            result, simulation_data = self.current_simulator.run()
+            
             if result:
-                self.statusBar().showMessage("Simulation completed successfully", 3000)
+                self.statusBar().showMessage("Simulation running with containers deployed", 5000)
                 self.show_simulation_results(simulation_data)
             else:
-                self.statusBar().showMessage("Simulation completed with errors", 3000)
+                self.statusBar().showMessage("Simulation failed", 3000)
+                self.simulate_action.setEnabled(True)
+                self.stop_simulation_action.setEnabled(False)
+                self.current_simulator = None
+                
+                QMessageBox.critical(self, "Simulation Error", 
+                                   f"Simulation failed: {simulation_data.get('error', 'Unknown error')}")
+                
         except Exception as e:
+            self.simulate_action.setEnabled(True)
+            self.stop_simulation_action.setEnabled(False)
+            self.current_simulator = None
             QMessageBox.critical(self, "Simulation Error", f"Failed to run simulation: {str(e)}")
+
+    def stop_simulation(self):
+        """Stop the current simulation"""
+        if self.current_simulator:
+            try:
+                result = self.current_simulator.stop_simulation()
+                if result:
+                    self.statusBar().showMessage("Simulation stopped and containers cleaned up", 3000)
+                else:
+                    self.statusBar().showMessage("Error stopping simulation", 3000)
+            except Exception as e:
+                QMessageBox.warning(self, "Stop Simulation", f"Error stopping simulation: {str(e)}")
+            finally:
+                self.current_simulator = None
+                self.simulate_action.setEnabled(True)
+                self.stop_simulation_action.setEnabled(False)
 
     def show_simulation_results(self, simulation_data):
         """Display simulation results in a new window"""
         dialog = QDialog(self)
-        dialog.setWindowTitle("Simulation Results")
-        dialog.setMinimumSize(800, 600)
+        dialog.setWindowTitle("5G Network Simulation Results")
+        dialog.setMinimumSize(1000, 700)
         
         layout = QVBoxLayout()
         
@@ -265,6 +317,67 @@ class MainWindow(QMainWindow):
         
         summary_tab.setLayout(summary_layout)
         tabs.addTab(summary_tab, "Summary")
+        
+        # Container Status tab
+        if 'container_deployment' in simulation_data:
+            container_tab = QWidget()
+            container_layout = QVBoxLayout()
+            
+            container_text = QTextEdit()
+            container_text.setReadOnly(True)
+            
+            containers = simulation_data['container_deployment']['containers']
+            container_content = "<h2>Container Status</h2>"
+            container_content += f"<p><b>Status:</b> {simulation_data['container_deployment']['status']}</p>"
+            container_content += f"<p><b>Message:</b> {simulation_data['container_deployment']['message']}</p>"
+            container_content += "<h3>Deployed Containers:</h3>"
+            container_content += "<table border='1'><tr><th>Name</th><th>Status</th><th>IP Address</th><th>Container ID</th><th>Action</th></tr>"
+            
+            for container in containers:
+                container_content += f"<tr><td>{container['name']}</td><td>{container['status']}</td><td>{container.get('ip', 'N/A')}</td><td>{container.get('id', 'N/A')}</td><td><a href='#{container['name']}'>Open Terminal</a></td></tr>"
+            
+            container_content += "</table>"
+            
+            container_text.setHtml(container_content)
+            
+            # Connect link clicks to terminal opening
+            container_text.anchorClicked.connect(self.open_container_terminal)
+            
+            container_layout.addWidget(container_text)
+            container_tab.setLayout(container_layout)
+            tabs.addTab(container_tab, "Containers")
+        
+        # Connectivity tab
+        if 'connectivity_tests' in simulation_data:
+            conn_tab = QWidget()
+            conn_layout = QVBoxLayout()
+            
+            conn_text = QTextEdit()
+            conn_text.setReadOnly(True)
+            
+            connectivity = simulation_data['connectivity_tests']
+            summary = simulation_data.get('connectivity_summary', {})
+            
+            conn_content = "<h2>Connectivity Test Results</h2>"
+            conn_content += f"<p><b>Total Tests:</b> {summary.get('total_tests', 0)}</p>"
+            conn_content += f"<p><b>Successful Tests:</b> {summary.get('successful_tests', 0)}</p>"
+            conn_content += f"<p><b>Success Rate:</b> {summary.get('success_rate', '0%')}</p>"
+            
+            conn_content += "<h3>Detailed Results:</h3>"
+            conn_content += "<table border='1'><tr><th>Source</th><th>Target</th><th>Result</th><th>Details</th></tr>"
+            
+            for test in connectivity:
+                result = "✅ Success" if test['success'] else "❌ Failed"
+                details = "Ping successful" if test['success'] else test.get('error', 'Ping failed')
+                
+                conn_content += f"<tr><td>{test['source']} ({test['source_ip']})</td><td>{test['target']} ({test['target_ip']})</td><td>{result}</td><td>{details}</td></tr>"
+            
+            conn_content += "</table>"
+            
+            conn_text.setHtml(conn_content)
+            conn_layout.addWidget(conn_text)
+            conn_tab.setLayout(conn_layout)
+            tabs.addTab(conn_tab, "Connectivity")
         
         # Performance tab
         if 'performance_metrics' in simulation_data:
@@ -303,8 +416,26 @@ class MainWindow(QMainWindow):
         tabs.addTab(raw_tab, "Raw Data")
         
         layout.addWidget(tabs)
+        
+        # Add control buttons
+        button_layout = QVBoxLayout()
+        
+        # Stop simulation button
+        stop_button = QPushButton("Stop Simulation & Cleanup")
+        stop_button.clicked.connect(lambda: (self.stop_simulation(), dialog.close()))
+        button_layout.addWidget(stop_button)
+        
+        layout.addLayout(button_layout)
+        
         dialog.setLayout(layout)
         dialog.exec_()
+
+    def open_container_terminal(self, url):
+        """Open terminal to container when link is clicked"""
+        container_name = url.toString().replace('#', '')
+        if self.current_simulator:
+            self.current_simulator.open_container_terminal(container_name)
+            self.statusBar().showMessage(f"Opening terminal to {container_name}", 3000)
 
     def show_about(self):
         QMessageBox.about(self, "About NetFlux5G",

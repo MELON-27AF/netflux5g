@@ -1,11 +1,13 @@
 from PyQt5.QtCore import QPointF
 from models.component_factory import ComponentFactory
 from utils import calculate_latency, calculate_throughput, calculate_resource_utilization
+from .container_manager import ContainerManager
 
 class NetworkSimulator:
     def __init__(self, canvas):
         self.canvas = canvas
         self.component_factory = ComponentFactory()
+        self.container_manager = ContainerManager()
 
     def run(self):
         """
@@ -14,25 +16,59 @@ class NetworkSimulator:
         Returns:
             tuple: (success_status, simulation_data)
         """
-        # This is a placeholder for the actual simulation logic
-        # In a real implementation, you would:
-        # 1. Analyze the network topology from the canvas
-        # 2. Run simulations based on the topology
-        # 3. Collect performance metrics and statistics
-        # 4. Return the results
-        
         try:
             # Get all components and connections from the canvas
             components = self.canvas.components
             connections = self.canvas.connections
             
-            # Simulate network traffic and performance
+            print("Starting 5G network simulation...")
+            
+            # Deploy containers for 5G components
+            success, message = self.container_manager.deploy_5g_core(components)
+            
+            if not success:
+                return False, {"error": message}
+            
+            print(f"Container deployment: {message}")
+            
+            # Wait a moment for containers to start
+            import time
+            time.sleep(5)
+            
+            # Test connectivity
+            print("Testing network connectivity...")
+            connectivity_results = self.container_manager.test_connectivity()
+            
+            # Get container status
+            container_status = self.container_manager.get_container_status()
+            
+            # Simulate network traffic and performance (existing logic)
             simulation_data = self._simulate_network(components, connections)
             
+            # Add container deployment results
+            simulation_data["container_deployment"] = {
+                "status": "success",
+                "message": message,
+                "containers": container_status
+            }
+            
+            simulation_data["connectivity_tests"] = connectivity_results
+            
+            # Calculate connectivity statistics
+            total_tests = len(connectivity_results)
+            successful_tests = sum(1 for test in connectivity_results if test['success'])
+            
+            simulation_data["connectivity_summary"] = {
+                "total_tests": total_tests,
+                "successful_tests": successful_tests,
+                "success_rate": f"{(successful_tests/total_tests*100):.1f}%" if total_tests > 0 else "0%"
+            }
+            
             return True, simulation_data
+            
         except Exception as e:
             print(f"Simulation error: {str(e)}")
-            return False, {}
+            return False, {"error": str(e)}
     
     def _simulate_network(self, components, connections):
         """
@@ -141,6 +177,20 @@ class NetworkSimulator:
                 }
         
         return simulation_data
+
+    def stop_simulation(self):
+        """Stop the simulation and cleanup containers"""
+        try:
+            print("Stopping simulation and cleaning up containers...")
+            self.container_manager.cleanup()
+            return True
+        except Exception as e:
+            print(f"Error stopping simulation: {e}")
+            return False
+    
+    def open_container_terminal(self, container_name):
+        """Open terminal to specific container"""
+        self.container_manager.open_terminal_to_container(container_name)
 
     def load_template(self, template_name):
         """Load a predefined network topology template"""
