@@ -89,34 +89,39 @@ class ContainerManager:
             comp_id = getattr(component, 'component_id', id(component))
             
             name = properties.get("name", f"{comp_type}_{comp_id}")
-            
-            # Use open5gs images or ubuntu with networking tools for simulation
+              # Use Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'ubuntu:20.04',
-                'amf': 'ubuntu:20.04', 
-                'smf': 'ubuntu:20.04',
-                'upf': 'ubuntu:20.04',
-                'pcf': 'ubuntu:20.04',
-                'udm': 'ubuntu:20.04',
-                'ausf': 'ubuntu:20.04'
+                'nrf': 'open5gs/open5gs:latest',
+                'amf': 'open5gs/open5gs:latest', 
+                'smf': 'open5gs/open5gs:latest',
+                'upf': 'open5gs/open5gs:latest',                'pcf': 'open5gs/open5gs:latest',
+                'udm': 'open5gs/open5gs:latest',
+                'ausf': 'open5gs/open5gs:latest'
             }
             
-            image = image_map.get(component.component_type, 'ubuntu:20.04')
+            image = image_map.get(component.component_type, 'open5gs/open5gs:latest')
             
-            # Create container with networking tools
+            # Get component-specific command and configuration
+            command = self.get_open5gs_command(component.component_type)
+            
+            # Create container with Open5GS configuration
             container = self.client.containers.run(
                 image,
-                command="sleep infinity",
+                command=command,
                 name=name,
                 network=self.network_name,
                 detach=True,
                 remove=False,
                 cap_add=['NET_ADMIN'],
+                ports={f'{self.get_component_port(component.component_type)}/tcp': None} if self.get_component_port(component.component_type) else None,
                 environment={
                     'COMPONENT_TYPE': component.component_type,
-                    'COMPONENT_NAME': name
-                }
-            )
+                    'COMPONENT_NAME': name,
+                    'OPEN5GS_LOG_LEVEL': 'info'
+                },
+                volumes={
+                    '/etc/open5gs': {'bind': '/etc/open5gs', 'mode': 'rw'}
+                } if os.path.exists('/etc/open5gs') else None            )
             
             # Install networking tools
             self.setup_container_networking(container)
@@ -130,13 +135,13 @@ class ContainerManager:
             return None
     
     def deploy_gnb_component(self, component):
-        """Deploy gNB component"""
+        """Deploy gNB component using UERANSIM"""
         try:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'ubuntu:20.04',
-                command="sleep infinity",
+                'ueransim/ueransim:latest',
+                command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
                 detach=True,
@@ -146,10 +151,13 @@ class ContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'gnb',
                     'COMPONENT_NAME': name,
+                    'MCC': str(component.properties.get('mcc', '001')),
+                    'MNC': str(component.properties.get('mnc', '01')),
                     'TAC': str(component.properties.get('tac', 1)),
-                    'POWER': str(component.properties.get('power', 20))
-                }
-            )
+                    'PLMN_ID': f"{component.properties.get('mcc', '001')}{component.properties.get('mnc', '01')}",
+                    'AMF_IP': component.properties.get('amf_ip', '172.17.0.1'),
+                    'GNB_ID': str(component.properties.get('gnb_id', 1))
+                }            )
             
             self.setup_container_networking(container)
             print(f"Deployed gNB: {name}")
@@ -160,13 +168,13 @@ class ContainerManager:
             return None
     
     def deploy_ue_component(self, component):
-        """Deploy UE component"""
+        """Deploy UE component using UERANSIM"""
         try:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'ubuntu:20.04',
-                command="sleep infinity", 
+                'ueransim/ueransim:latest',
+                command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
                 detach=True,
@@ -175,7 +183,12 @@ class ContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'ue',
                     'COMPONENT_NAME': name,
-                    'IMSI': component.properties.get('imsi', '001010000000001')
+                    'IMSI': component.properties.get('imsi', '001010000000001'),
+                    'IMEI': component.properties.get('imei', '356938035643803'),
+                    'MCC': str(component.properties.get('mcc', '001')),
+                    'MNC': str(component.properties.get('mnc', '01')),
+                    'PLMN_ID': f"{component.properties.get('mcc', '001')}{component.properties.get('mnc', '01')}",
+                    'GNB_IP': component.properties.get('gnb_ip', '172.17.0.1')
                 }
             )
             
@@ -230,7 +243,7 @@ class ContainerManager:
                         )
                         
                         success = exec_result.exit_code == 0
-                        output = exec_result.output.decode('utf-8')
+                        output = exec_result.output.decode('utf-8');
                         
                         results.append({
                             'source': source['name'],
@@ -320,3 +333,103 @@ class ContainerManager:
             print(f"Error opening terminal: {e}")
             # Fallback: just print the command
             print(f"Run this command in your terminal: docker exec -it {container_name} /bin/bash")
+    
+    def get_open5gs_command(self, component_type):
+        """Get the appropriate Open5GS command for each component"""
+        command_map = {
+            'nrf': '/usr/bin/open5gs-nrfd -c /etc/open5gs/nrf.yaml',
+            'amf': '/usr/bin/open5gs-amfd -c /etc/open5gs/amf.yaml',
+            'smf': '/usr/bin/open5gs-smfd -c /etc/open5gs/smf.yaml',
+            'upf': '/usr/bin/open5gs-upfd -c /etc/open5gs/upf.yaml',
+            'pcf': '/usr/bin/open5gs-pcfd -c /etc/open5gs/pcf.yaml',
+            'udm': '/usr/bin/open5gs-udmd -c /etc/open5gs/udm.yaml',
+            'ausf': '/usr/bin/open5gs-ausfd -c /etc/open5gs/ausf.yaml'
+        }
+        return command_map.get(component_type, 'sleep infinity')
+    
+    def get_component_port(self, component_type):
+        """Get the default port for each Open5GS component"""
+        port_map = {
+            'nrf': 7777,
+            'amf': 38412,
+            'smf': 8805,
+            'upf': 8805,
+            'pcf': 7777,
+            'udm': 7777,
+            'ausf': 7777
+        }
+        return port_map.get(component_type)
+    
+    def create_open5gs_config(self, component_type, component_name):
+        """Create Open5GS configuration for component"""
+        configs = {
+            'nrf': {
+                'logger': {'level': 'info'},
+                'nrf': {
+                    'sbi': [{'addr': '0.0.0.0', 'port': 7777}]
+                }
+            },
+            'amf': {
+                'logger': {'level': 'info'},
+                'amf': {
+                    'sbi': [{'addr': '0.0.0.0', 'port': 7777}],
+                    'ngap': [{'addr': '0.0.0.0'}],
+                    'guami': [{'plmn_id': {'mcc': '001', 'mnc': '01'}, 'amf_id': {'region': 2, 'set': 1}}],
+                    'tai': [{'plmn_id': {'mcc': '001', 'mnc': '01'}, 'tac': 1}],
+                    'plmn_support': [{'plmn_id': {'mcc': '001', 'mnc': '01'}, 's_nssai': [{'sst': 1}]}],
+                    'security': {'integrity_order': ['NIA2', 'NIA1', 'NIA0'], 'ciphering_order': ['NEA0', 'NEA1', 'NEA2']}
+                },
+                'nrf': {'sbi': [{'addr': 'nrf', 'port': 7777}]}
+            }
+        }
+        return configs.get(component_type, {})
+    
+    def setup_ueransim_config(self, container, component_type, properties):
+        """Setup UERANSIM configuration files"""
+        try:
+            if component_type == 'gnb':
+                config = self.create_gnb_config(properties)
+                container.exec_run(f"echo '{config}' > /etc/ueransim/gnb.yaml", detach=False)
+            elif component_type == 'ue':
+                config = self.create_ue_config(properties)
+                container.exec_run(f"echo '{config}' > /etc/ueransim/ue.yaml", detach=False)
+        except Exception as e:
+            print(f"Warning: Failed to setup UERANSIM config: {e}")
+    
+    def create_gnb_config(self, properties):
+        """Create gNB configuration for UERANSIM"""
+        return f"""mcc: '{properties.get('mcc', '001')}'
+mnc: '{properties.get('mnc', '01')}'
+nci: {properties.get('gnb_id', 1)}
+idLength: 32
+tac: {properties.get('tac', 1)}
+linkIp: 0.0.0.0
+ngapIp: 0.0.0.0
+gtpIp: 0.0.0.0
+amfConfigs:
+  - address: {properties.get('amf_ip', '172.17.0.1')}
+    port: 38412
+slices:
+  - sst: 0x01
+    sd: 0x010203
+ignoreStreamIds: true"""
+    
+    def create_ue_config(self, properties):
+        """Create UE configuration for UERANSIM"""
+        return f"""supi: 'imsi-{properties.get('imsi', '001010000000001')}'
+mcc: '{properties.get('mcc', '001')}'
+mnc: '{properties.get('mnc', '01')}'
+routingIndicator: '0000'
+protectionScheme: 0
+homeNetworkPublicKey: '5a8d38864820197c3394b92613b20b76b976fdeb15f69e45b8a6194db36d7045'
+homeNetworkPrivateKey: 'f69e45b8a6194db36d7045' 
+homeNetworkPublicKeyId: 1
+pdnList:
+  - apn: 'internet'
+    slice:
+      sst: 0x01
+      sd: 0x010203
+integrityList: ['NIA1', 'NIA2', 'NIA3']
+cipheringList: ['NEA1', 'NEA2', 'NEA3']
+gnbSearchList:
+  - {properties.get('gnb_ip', '172.17.0.1')}"""
