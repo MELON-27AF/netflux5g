@@ -1,51 +1,74 @@
 from PyQt5.QtWidgets import (QMainWindow, QAction, QFileDialog, QDockWidget,
                             QToolBar, QMessageBox, QVBoxLayout, QWidget, QMenu,
-                            QDialog, QTextEdit, QTabWidget, QLabel, QGridLayout)
-from PyQt5.QtCore import Qt, QSettings
+                            QDialog, QTextEdit, QTabWidget, QLabel, QGridLayout,
+                            QPushButton)
+from PyQt5.QtCore import Qt, QSettings, QUrl
 from PyQt5.QtGui import QIcon
+import logging
+import traceback
 
-from .canvas import NetworkCanvas
-from .component_panel import ComponentPanel
-from .property_panel import PropertyPanel
-from .toolbar import TemplateToolBar
-from simulation.simulator import NetworkSimulator
+try:
+    from .canvas import NetworkCanvas
+    from .component_panel import ComponentPanel
+    from .property_panel import PropertyPanel
+    from .toolbar import TemplateToolBar
+    from simulation.simulator import NetworkSimulator
+except ImportError as e:
+    logging.error(f"Import error in main_window: {e}")
+    raise
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NetFlux5G - 5G Network Topology Designer")
-        self.resize(1200, 800)
+        try:
+            logging.info("Initializing MainWindow...")
+            self.setWindowTitle("NetFlux5G - 5G Network Topology Designer")
+            self.resize(1200, 800)
 
-        self.settings = QSettings()
-        self.current_simulator = None  # Track current simulation
+            self.settings = QSettings()
+            self.current_simulator = None
 
-        self.init_ui()
-        self.create_actions()
-        self.create_menus()
-        self.create_toolbars()
-        self.create_statusbar()
+            self.init_ui()
+            self.create_actions()
+            self.create_menus()
+            self.create_toolbars()
+            self.create_statusbar()
 
-        self.load_settings()
+            self.load_settings()
+            logging.info("MainWindow initialized successfully")
+            
+        except Exception as e:
+            logging.error(f"Error initializing MainWindow: {e}")
+            logging.error(traceback.format_exc())
+            raise
 
     def init_ui(self):
-        # Central widget - network canvas
-        self.canvas = NetworkCanvas(self)
-        self.setCentralWidget(self.canvas)
+        try:
+            logging.info("Initializing UI components...")
+            
+            # Central widget - network canvas
+            self.canvas = NetworkCanvas(self)
+            self.setCentralWidget(self.canvas)
 
-        # Component panel (left dock)
-        self.component_dock = QDockWidget("Network Components", self)
-        self.component_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        # Pass self (MainWindow) to ComponentPanel
-        self.component_panel = ComponentPanel(self)
-        self.component_dock.setWidget(self.component_panel)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.component_dock)
+            # Component panel (left dock)
+            self.component_dock = QDockWidget("Network Components", self)
+            self.component_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+            self.component_panel = ComponentPanel(self)
+            self.component_dock.setWidget(self.component_panel)
+            self.addDockWidget(Qt.LeftDockWidgetArea, self.component_dock)
 
-        # Properties panel (right dock)
-        self.property_dock = QDockWidget("Properties", self)
-        self.property_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.property_panel = PropertyPanel(self)
-        self.property_dock.setWidget(self.property_panel)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.property_dock)
+            # Properties panel (right dock)
+            self.property_dock = QDockWidget("Properties", self)
+            self.property_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+            self.property_panel = PropertyPanel(self)
+            self.property_dock.setWidget(self.property_panel)
+            self.addDockWidget(Qt.RightDockWidgetArea, self.property_dock)
+            
+            logging.info("UI components initialized successfully")
+            
+        except Exception as e:
+            logging.error(f"Error initializing UI: {e}")
+            raise
 
     def create_actions(self):
         # File actions
@@ -229,9 +252,9 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Template Error", f"Failed to load template: {str(e)}")
 
     def run_simulation(self):
-        from simulation.simulator import NetworkSimulator
-
         try:
+            logging.info("Starting simulation...")
+            
             # Check if simulation is already running
             if self.current_simulator:
                 reply = QMessageBox.question(
@@ -262,10 +285,14 @@ class MainWindow(QMainWindow):
                 self.stop_simulation_action.setEnabled(False)
                 self.current_simulator = None
                 
+                error_msg = simulation_data.get('error', 'Unknown error')
+                logging.error(f"Simulation failed: {error_msg}")
                 QMessageBox.critical(self, "Simulation Error", 
-                                   f"Simulation failed: {simulation_data.get('error', 'Unknown error')}")
+                                   f"Simulation failed: {error_msg}")
                 
         except Exception as e:
+            logging.error(f"Exception in run_simulation: {e}")
+            logging.error(traceback.format_exc())
             self.simulate_action.setEnabled(True)
             self.stop_simulation_action.setEnabled(False)
             self.current_simulator = None
@@ -432,10 +459,18 @@ class MainWindow(QMainWindow):
 
     def open_container_terminal(self, url):
         """Open terminal to container when link is clicked"""
-        container_name = url.toString().replace('#', '')
-        if self.current_simulator:
-            self.current_simulator.open_container_terminal(container_name)
-            self.statusBar().showMessage(f"Opening terminal to {container_name}", 3000)
+        try:
+            if isinstance(url, QUrl):
+                container_name = url.toString().replace('#', '')
+            else:
+                container_name = str(url).replace('#', '')
+                
+            if self.current_simulator:
+                self.current_simulator.open_container_terminal(container_name)
+                self.statusBar().showMessage(f"Opening terminal to {container_name}", 3000)
+        except Exception as e:
+            logging.error(f"Error opening container terminal: {e}")
+            QMessageBox.warning(self, "Terminal Error", f"Failed to open terminal: {str(e)}")
 
     def show_about(self):
         QMessageBox.about(self, "About NetFlux5G",

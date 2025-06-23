@@ -3,13 +3,17 @@ import subprocess
 import time
 import json
 import os
+import logging
 from datetime import datetime
 
 class ContainerManager:
     def __init__(self):
         try:
+            logging.info("Initializing ContainerManager...")
             self.client = docker.from_env()
+            logging.info("Docker client connected successfully")
         except Exception as e:
+            logging.error(f"Error connecting to Docker: {e}")
             print(f"Error connecting to Docker: {e}")
             self.client = None
         
@@ -74,7 +78,12 @@ class ContainerManager:
     def deploy_core_component(self, component):
         """Deploy a 5G core component"""
         try:
-            name = component.properties.get("name", f"{component.component_type}_{component.component_id}")
+            # Safe property access
+            properties = getattr(component, 'properties', {})
+            comp_type = getattr(component, 'component_type', 'unknown')
+            comp_id = getattr(component, 'component_id', id(component))
+            
+            name = properties.get("name", f"{comp_type}_{comp_id}")
             
             # Use open5gs images or ubuntu with networking tools for simulation
             image_map = {
@@ -111,7 +120,8 @@ class ContainerManager:
             return container
             
         except Exception as e:
-            print(f"Error deploying {component.component_type}: {e}")
+            logging.error(f"Error deploying {getattr(component, 'component_type', 'unknown')}: {e}")
+            print(f"Error deploying {getattr(component, 'component_type', 'unknown')}: {e}")
             return None
     
     def deploy_gnb_component(self, component):

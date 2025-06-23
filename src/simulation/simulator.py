@@ -2,12 +2,19 @@ from PyQt5.QtCore import QPointF
 from models.component_factory import ComponentFactory
 from utils import calculate_latency, calculate_throughput, calculate_resource_utilization
 from .container_manager import ContainerManager
+import logging
+import traceback
 
 class NetworkSimulator:
     def __init__(self, canvas):
-        self.canvas = canvas
-        self.component_factory = ComponentFactory()
-        self.container_manager = ContainerManager()
+        try:
+            self.canvas = canvas
+            self.component_factory = ComponentFactory()
+            self.container_manager = ContainerManager()
+            logging.info("NetworkSimulator initialized")
+        except Exception as e:
+            logging.error(f"Error initializing NetworkSimulator: {e}")
+            raise
 
     def run(self):
         """
@@ -17,9 +24,21 @@ class NetworkSimulator:
             tuple: (success_status, simulation_data)
         """
         try:
+            logging.info("Starting network simulation...")
+            
             # Get all components and connections from the canvas
-            components = self.canvas.components
-            connections = self.canvas.connections
+            if not hasattr(self.canvas, 'components') or not hasattr(self.canvas, 'connections'):
+                logging.error("Canvas does not have required attributes")
+                return False, {"error": "Canvas is not properly initialized"}
+                
+            components = getattr(self.canvas, 'components', [])
+            connections = getattr(self.canvas, 'connections', [])
+            
+            logging.info(f"Found {len(components)} components and {len(connections)} connections")
+            
+            if not components:
+                logging.warning("No components found in canvas")
+                return False, {"error": "No components found. Please add components to the canvas first."}
             
             print("Starting 5G network simulation...")
             
@@ -27,6 +46,7 @@ class NetworkSimulator:
             success, message = self.container_manager.deploy_5g_core(components)
             
             if not success:
+                logging.error(f"Container deployment failed: {message}")
                 return False, {"error": message}
             
             print(f"Container deployment: {message}")
@@ -67,6 +87,8 @@ class NetworkSimulator:
             return True, simulation_data
             
         except Exception as e:
+            logging.error(f"Simulation error: {e}")
+            logging.error(traceback.format_exc())
             print(f"Simulation error: {str(e)}")
             return False, {"error": str(e)}
     
@@ -81,102 +103,115 @@ class NetworkSimulator:
         Returns:
             dict: Simulation data and results
         """
-        # Count component types for analysis
-        component_counts = {}
-        for component in components:
-            comp_type = component.component_type
-            if comp_type in component_counts:
-                component_counts[comp_type] += 1
-            else:
-                component_counts[comp_type] = 1
-        
-        # Calculate network metrics based on the topology using utility functions
-        latency_metrics = calculate_latency(len(components), len(connections), component_counts)
-        throughput_metrics = calculate_throughput(len(components), len(connections), component_counts)
-        resource_metrics = calculate_resource_utilization(len(components), len(connections), component_counts)
-                
-        # Generate simulation data based on topology and calculations
-        simulation_data = {
-            "network_stats": {
-                "Total Components": len(components),
-                "Total Connections": len(connections),
-                "Component Distribution": component_counts
-            },
-            "performance_metrics": {
-                "Latency": latency_metrics,
-                "Throughput": throughput_metrics,
-                "Resource Utilization": resource_metrics
-            },
-            "simulation_time": "00:00:30",
-            "component_specific_data": {}
-        }
-        
-        # Add component-specific data based on component type
-        for component in components:
-            comp_id = component.component_id if hasattr(component, 'component_id') else id(component)
-            comp_type = component.component_type if hasattr(component, 'component_type') else "unknown"
+        try:
+            logging.info("Simulating network...")
             
-            # Generate data based on component type
-            if "core" in comp_type.lower() or comp_type in ["amf", "smf", "upf", "pcf", "udm", "ausf", "nrf"]:
-                # Core network components
-                connection_count = sum(1 for c in connections if c.source == component or c.target == component)
-                load_percentage = 30 + (connection_count * 5)
-                throughput = 100 + (connection_count * 20)
-                
-                simulation_data["component_specific_data"][comp_id] = {
-                    "type": comp_type,
-                    "load": f"{min(95, load_percentage)}%",
-                    "throughput": f"{throughput} Mbps",
-                    "connections": connection_count
-                }
-                
-            elif comp_type in ["gnb", "ue"] or "ran" in comp_type.lower() or "antenna" in comp_type.lower():
-                # RAN components
-                if comp_type == "gnb":
-                    # gNB specific metrics
-                    power = component.properties.get("power", 20) if hasattr(component, 'properties') else 20
-                    connected_ues = sum(1 for c in connections if (c.source == component and getattr(c.target, 'component_type', '') == "ue") or 
-                                       (c.target == component and getattr(c.source, 'component_type', '') == "ue"))
-                    
-                    simulation_data["component_specific_data"][comp_id] = {
-                        "type": comp_type,
-                        "signal_power": f"{power} dBm",
-                        "connected_ues": connected_ues,
-                        "bandwidth": f"{100 + (connected_ues * 20)} MHz"
-                    }
-                elif comp_type == "ue":
-                    # UE specific metrics
-                    connected_gnb = next((c for c in connections if 
-                                         (c.source == component and getattr(c.target, 'component_type', '') == "gnb") or
-                                         (c.target == component and getattr(c.source, 'component_type', '') == "gnb")), None)
-                    
-                    signal_strength = -70
-                    if connected_gnb:
-                        # Calculate signal strength based on "distance" (simplified)
-                        gnb = c.source if getattr(c.source, 'component_type', '') == "gnb" else c.target
-                        power = gnb.properties.get("power", 20) if hasattr(gnb, 'properties') else 20
-                        # A very simplified signal strength calculation
-                        signal_strength = -70 + (power / 2)
-                    
-                    simulation_data["component_specific_data"][comp_id] = {
-                        "type": comp_type,
-                        "signal_strength": f"{signal_strength} dBm",
-                        "data_rate": f"{80 + (signal_strength + 100)} Mbps"  # Higher signal = higher data rate
-                    }
+            # Count component types for analysis
+            component_counts = {}
+            for component in components:
+                try:
+                    comp_type = getattr(component, 'component_type', 'unknown')
+                    component_counts[comp_type] = component_counts.get(comp_type, 0) + 1
+                except Exception as e:
+                    logging.warning(f"Error accessing component type: {e}")
+                    component_counts['unknown'] = component_counts.get('unknown', 0) + 1
             
-            elif comp_type in ["switch", "router"]:
-                # Network infrastructure components
-                connection_count = sum(1 for c in connections if c.source == component or c.target == component)
-                packet_rate = 1000 * connection_count
+            # Calculate network metrics using utility functions
+            latency_metrics = calculate_latency(len(components), len(connections), component_counts)
+            throughput_metrics = calculate_throughput(len(components), len(connections), component_counts)
+            resource_metrics = calculate_resource_utilization(len(components), len(connections), component_counts)
+                    
+            # Generate simulation data based on topology and calculations
+            simulation_data = {
+                "network_stats": {
+                    "Total Components": len(components),
+                    "Total Connections": len(connections),
+                    "Component Distribution": component_counts
+                },
+                "performance_metrics": {
+                    "Latency": latency_metrics,
+                    "Throughput": throughput_metrics,
+                    "Resource Utilization": resource_metrics
+                },
+                "simulation_time": "00:00:30",
+                "component_specific_data": {}
+            }
+            
+            # Add component-specific data based on component type
+            for component in components:
+                try:
+                    comp_id = getattr(component, 'component_id', id(component))
+                    comp_type = getattr(component, 'component_type', 'unknown')
+                    
+                    # Generate data based on component type
+                    if "core" in comp_type.lower() or comp_type in ["amf", "smf", "upf", "pcf", "udm", "ausf", "nrf"]:
+                        # Core network components
+                        connection_count = sum(1 for c in connections if c.source == component or c.target == component)
+                        load_percentage = 30 + (connection_count * 5)
+                        throughput = 100 + (connection_count * 20)
+                        
+                        simulation_data["component_specific_data"][comp_id] = {
+                            "type": comp_type,
+                            "load": f"{min(95, load_percentage)}%",
+                            "throughput": f"{throughput} Mbps",
+                            "connections": connection_count
+                        }
+                        
+                    elif comp_type in ["gnb", "ue"] or "ran" in comp_type.lower() or "antenna" in comp_type.lower():
+                        # RAN components
+                        if comp_type == "gnb":
+                            # gNB specific metrics
+                            power = component.properties.get("power", 20) if hasattr(component, 'properties') else 20
+                            connected_ues = sum(1 for c in connections if (c.source == component and getattr(c.target, 'component_type', '') == "ue") or 
+                                               (c.target == component and getattr(c.source, 'component_type', '') == "ue"))
+                            
+                            simulation_data["component_specific_data"][comp_id] = {
+                                "type": comp_type,
+                                "signal_power": f"{power} dBm",
+                                "connected_ues": connected_ues,
+                                "bandwidth": f"{100 + (connected_ues * 20)} MHz"
+                            }
+                        elif comp_type == "ue":
+                            # UE specific metrics
+                            connected_gnb = next((c for c in connections if 
+                                                 (c.source == component and getattr(c.target, 'component_type', '') == "gnb") or
+                                                 (c.target == component and getattr(c.source, 'component_type', '') == "gnb")), None)
+                            
+                            signal_strength = -70
+                            if connected_gnb:
+                                # Calculate signal strength based on "distance" (simplified)
+                                gnb = c.source if getattr(c.source, 'component_type', '') == "gnb" else c.target
+                                power = gnb.properties.get("power", 20) if hasattr(gnb, 'properties') else 20
+                                # A very simplified signal strength calculation
+                                signal_strength = -70 + (power / 2)
+                            
+                            simulation_data["component_specific_data"][comp_id] = {
+                                "type": comp_type,
+                                "signal_strength": f"{signal_strength} dBm",
+                                "data_rate": f"{80 + (signal_strength + 100)} Mbps"  # Higher signal = higher data rate
+                            }
                 
-                simulation_data["component_specific_data"][comp_id] = {
-                    "type": comp_type,
-                    "packet_rate": f"{packet_rate} pps",
-                    "connections": connection_count,
-                    "load": f"{min(95, 30 + (connection_count * 10))}%"
-                }
-        
-        return simulation_data
+                    elif comp_type in ["switch", "router"]:
+                        # Network infrastructure components
+                        connection_count = sum(1 for c in connections if c.source == component or c.target == component)
+                        packet_rate = 1000 * connection_count
+                        
+                        simulation_data["component_specific_data"][comp_id] = {
+                            "type": comp_type,
+                            "packet_rate": f"{packet_rate} pps",
+                            "connections": connection_count,
+                            "load": f"{min(95, 30 + (connection_count * 10))}%"
+                        }
+                
+                except Exception as e:
+                    logging.warning(f"Error processing component {getattr(component, 'component_id', 'unknown')}: {e}")
+                    continue
+            
+            return simulation_data
+            
+        except Exception as e:
+            logging.error(f"Error in _simulate_network: {e}")
+            raise
 
     def stop_simulation(self):
         """Stop the simulation and cleanup containers"""
@@ -337,15 +372,31 @@ class NetworkSimulator:
         """
         # Implementation would combine core and RAN templates
         # with more complex topology
-        print("Full 5G network template not implemented yet")
+        print("Full 5g network template not implemented yet")
         return False
 
     def add_component(self, component_type, position):
         """Add a component to the canvas and return it"""
-        component = self.canvas.add_component(component_type, position)
-        return component
+        try:
+            if hasattr(self.canvas, 'add_component'):
+                component = self.canvas.add_component(component_type, position)
+                return component
+            else:
+                logging.error("Canvas does not have add_component method")
+                return None
+        except Exception as e:
+            logging.error(f"Error adding component: {e}")
+            return None
         
     def add_link(self, source, target):
         """Add a link between two components"""
-        link = self.canvas.add_link(source, target)
-        return link
+        try:
+            if hasattr(self.canvas, 'add_link'):
+                link = self.canvas.add_link(source, target)
+                return link
+            else:
+                logging.error("Canvas does not have add_link method")
+                return None
+        except Exception as e:
+            logging.error(f"Error adding link: {e}")
+            return None
