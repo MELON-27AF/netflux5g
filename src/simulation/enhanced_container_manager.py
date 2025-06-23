@@ -42,7 +42,7 @@ class EnhancedContainerManager:
                 "environment": {},
                 "volumes": {}
             },            "nrf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"],
                 "ports": {"7777": "7777"},
                 "depends_on": ["mongodb"],
@@ -50,7 +50,7 @@ class EnhancedContainerManager:
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "amf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"],
                 "ports": {"38412": "38412"},
                 "depends_on": ["nrf"],
@@ -58,14 +58,14 @@ class EnhancedContainerManager:
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "smf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "upf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-upfd", "-c", "/etc/open5gs/upf.yaml"],
                 "ports": {"8805": "8805"},
                 "cap_add": ["NET_ADMIN"],
@@ -74,31 +74,31 @@ class EnhancedContainerManager:
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "ausf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "udm": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-udmd", "-c", "/etc/open5gs/udm.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
                     "/etc/open5gs": "/etc/open5gs"
                 }
             },            "pcf": {
-                "image": "gradiant/open5gs:1.0",
+                "image": "gradiant/open5gs:latest",
                 "command": ["open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
-            }        }
+                    "/etc/open5gs": "/etc/open5gs"                }
+            }
+        }
         
         self.ueransim_config = {
             "gnb": {
-                "image": "gradiant/ueransim:1.0",
+                "image": "ubuntu:20.04",
                 "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
@@ -107,7 +107,7 @@ class EnhancedContainerManager:
                 }
             },
             "ue": {
-                "image": "gradiant/ueransim:1.0", 
+                "image": "ubuntu:20.04", 
                 "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,

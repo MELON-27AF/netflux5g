@@ -27,22 +27,22 @@ image_map = {
 **After:**
 ```python
 image_map = {
-    'nrf': 'gradiant/open5gs:1.0',
-    'amf': 'gradiant/open5gs:1.0', 
-    'smf': 'gradiant/open5gs:1.0',
-    'upf': 'gradiant/open5gs:1.0',
-    'pcf': 'gradiant/open5gs:1.0',
-    'udm': 'gradiant/open5gs:1.0',
-    'ausf': 'gradiant/open5gs:1.0'
+    'nrf': 'gradiant/open5gs:latest',
+    'amf': 'gradiant/open5gs:latest', 
+    'smf': 'gradiant/open5gs:latest',
+    'upf': 'gradiant/open5gs:latest',
+    'pcf': 'gradiant/open5gs:latest',
+    'udm': 'gradiant/open5gs:latest',
+    'ausf': 'gradiant/open5gs:latest'
 }
 ```
 
-- Changed UERANSIM images from `ueransim/ueransim:latest` to `gradiant/ueransim:1.0`
-- Updated default fallback image to `gradiant/open5gs:1.0`
+- Changed UERANSIM images from `ueransim/ueransim:latest` to `ubuntu:20.04` (with UERANSIM installed at runtime)
+- Updated default fallback image to `gradiant/open5gs:latest`
 
 #### 2. Updated `src/simulation/enhanced_container_manager.py`
-- Updated all Open5GS component images to use `gradiant/open5gs:1.0`
-- Updated UERANSIM images to use `gradiant/ueransim:1.0`
+- Updated all Open5GS component images to use `gradiant/open5gs:latest`
+- Updated UERANSIM images to use `ubuntu:20.04`
 
 #### 3. Created Helper Scripts
 - **`pull_images.py`**: Python script to pre-pull all required Docker images
@@ -50,8 +50,8 @@ image_map = {
 
 ### Required Docker Images
 The application now uses these publicly available images:
-- `gradiant/open5gs:1.0` - for all 5G Core components (NRF, AMF, SMF, UPF, PCF, UDM, AUSF)
-- `gradiant/ueransim:1.0` - for gNB and UE components
+- `gradiant/open5gs:latest` - for all 5G Core components (NRF, AMF, SMF, UPF, PCF, UDM, AUSF)
+- `ubuntu:20.04` - base image for gNB and UE components (UERANSIM will be installed at runtime)
 - `mongo:4.4` - for MongoDB database
 
 ### How to Use
@@ -73,5 +73,6 @@ The application should now be able to successfully pull and deploy the Docker co
 
 ### Notes
 - The Gradiant images are publicly available and don't require authentication
-- Version 1.0 provides a stable, tested version of the Open5GS and UERANSIM components
+- Version `latest` provides the most recent stable version of the Open5GS components
+- Ubuntu 20.04 is used as a base image for UERANSIM components, which will be configured at runtime
 - All functionality should remain the same, only the underlying Docker images have changed

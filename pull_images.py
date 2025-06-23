@@ -9,11 +9,10 @@ import sys
 
 def pull_images():
     """Pull all required Docker images"""
-    
-    # List of required images
+      # List of required images
     images = [
-        "gradiant/open5gs:1.0",      # Open5GS 5G Core components
-        "gradiant/ueransim:1.0",     # UERANSIM gNB and UE
+        "gradiant/open5gs:latest",   # Open5GS 5G Core components
+        "ubuntu:20.04",              # Base image for UERANSIM gNB and UE
         "mongo:4.4"                  # MongoDB for Open5GS
     ]
     
