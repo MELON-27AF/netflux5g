@@ -86,20 +86,21 @@ class ContainerManager:
             # Safe property access
             properties = getattr(component, 'properties', {})
             comp_type = getattr(component, 'component_type', 'unknown')
-            comp_id = getattr(component, 'component_id', id(component))
+            comp_id = getattr(component, 'component_id', id(component))            
+            name = properties.get("name", f"{comp_type}_{comp_id}")
             
-            name = properties.get("name", f"{comp_type}_{comp_id}")            # Use Open5GS Docker images for 5G core components
+            # Use Gradiant Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'registry.gitlab.com/oai/cn5g/open5gs-nrf:latest',
-                'amf': 'registry.gitlab.com/oai/cn5g/open5gs-amf:latest', 
-                'smf': 'registry.gitlab.com/oai/cn5g/open5gs-smf:latest',
-                'upf': 'registry.gitlab.com/oai/cn5g/open5gs-upf:latest',
-                'pcf': 'registry.gitlab.com/oai/cn5g/open5gs-pcf:latest',
-                'udm': 'registry.gitlab.com/oai/cn5g/open5gs-udm:latest',
-                'ausf': 'registry.gitlab.com/oai/cn5g/open5gs-ausf:latest'
+                'nrf': 'gradiant/open5gs:1.0',
+                'amf': 'gradiant/open5gs:1.0', 
+                'smf': 'gradiant/open5gs:1.0',
+                'upf': 'gradiant/open5gs:1.0',
+                'pcf': 'gradiant/open5gs:1.0',
+                'udm': 'gradiant/open5gs:1.0',
+                'ausf': 'gradiant/open5gs:1.0'
             }
             
-            image = image_map.get(component.component_type, 'open5gs/open5gs:latest')
+            image = image_map.get(component.component_type, 'gradiant/open5gs:1.0')
             
             # Get component-specific command and configuration
             command = self.get_open5gs_command(component.component_type)
@@ -133,14 +134,14 @@ class ContainerManager:
             logging.error(f"Error deploying {getattr(component, 'component_type', 'unknown')}: {e}")
             print(f"Error deploying {getattr(component, 'component_type', 'unknown')}: {e}")
             return None
-    
+
     def deploy_gnb_component(self, component):
         """Deploy gNB component using UERANSIM"""
         try:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'ueransim/ueransim:latest',
+                'gradiant/ueransim:1.0',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -173,7 +174,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'ueransim/ueransim:latest',
+                'gradiant/ueransim:1.0',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
