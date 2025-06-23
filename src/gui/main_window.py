@@ -12,7 +12,10 @@ try:
     from .component_panel import ComponentPanel
     from .property_panel import PropertyPanel
     from .toolbar import TemplateToolBar
+    from .terminal_dialog import TerminalDialog
     from simulation.simulator import NetworkSimulator
+    from simulation.enhanced_container_manager import EnhancedContainerManager
+    import logging
 except ImportError as e:
     logging.error(f"Import error in main_window: {e}")
     raise
