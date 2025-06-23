@@ -87,19 +87,18 @@ class ContainerManager:
             properties = getattr(component, 'properties', {})
             comp_type = getattr(component, 'component_type', 'unknown')
             comp_id = getattr(component, 'component_id', id(component))            
-            name = properties.get("name", f"{comp_type}_{comp_id}")
-              # Use Gradiant Open5GS Docker images for 5G core components
+            name = properties.get("name", f"{comp_type}_{comp_id}")              # Use Gradiant Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'gradiant/open5gs:latest',
-                'amf': 'gradiant/open5gs:latest', 
-                'smf': 'gradiant/open5gs:latest',
-                'upf': 'gradiant/open5gs:latest',
-                'pcf': 'gradiant/open5gs:latest',
-                'udm': 'gradiant/open5gs:latest',
-                'ausf': 'gradiant/open5gs:latest'
+                'nrf': 'gradiant/open5gs:2.7.5',
+                'amf': 'gradiant/open5gs:2.7.5', 
+                'smf': 'gradiant/open5gs:2.7.5',
+                'upf': 'gradiant/open5gs:2.7.5',
+                'pcf': 'gradiant/open5gs:2.7.5',
+                'udm': 'gradiant/open5gs:2.7.5',
+                'ausf': 'gradiant/open5gs:2.7.5'
             }
             
-            image = image_map.get(component.component_type, 'gradiant/open5gs:latest')
+            image = image_map.get(component.component_type, 'gradiant/open5gs:2.7.5')
             
             # Get component-specific command and configuration
             command = self.get_open5gs_command(component.component_type)
@@ -140,7 +139,7 @@ class ContainerManager:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'ubuntu:20.04',
+                'gradiant/ueransim:3.2.7',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -173,7 +172,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'ubuntu:20.04',
+                'gradiant/ueransim:3.2.7',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,

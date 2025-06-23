@@ -8,8 +8,8 @@ echo "============================================================"
 
 # List of required images
 images=(
-    "gradiant/open5gs:latest"   # Open5GS 5G Core components
-    "ubuntu:20.04"              # Base image for UERANSIM gNB and UE
+    "gradiant/open5gs:2.7.5"    # Open5GS 5G Core components
+    "gradiant/ueransim:3.2.7"   # UERANSIM gNB and UE components
     "mongo:4.4"                 # MongoDB for Open5GS
 )
 

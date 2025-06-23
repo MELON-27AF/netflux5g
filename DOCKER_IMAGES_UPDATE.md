@@ -6,7 +6,7 @@ The NetFlux5G application was failing to start simulations because it was trying
 - **UERANSIM Components**: Using `ueransim/ueransim:latest` (repository doesn't exist)
 
 ## Solution
-Updated all Docker image references to use publicly available Gradiant images with version 1.0:
+Updated all Docker image references to use publicly available Gradiant images with specific versions:
 
 ### Changes Made
 
@@ -26,23 +26,22 @@ image_map = {
 
 **After:**
 ```python
-image_map = {
-    'nrf': 'gradiant/open5gs:latest',
-    'amf': 'gradiant/open5gs:latest', 
-    'smf': 'gradiant/open5gs:latest',
-    'upf': 'gradiant/open5gs:latest',
-    'pcf': 'gradiant/open5gs:latest',
-    'udm': 'gradiant/open5gs:latest',
-    'ausf': 'gradiant/open5gs:latest'
+image_map = {    'nrf': 'gradiant/open5gs:2.7.5',
+    'amf': 'gradiant/open5gs:2.7.5', 
+    'smf': 'gradiant/open5gs:2.7.5',
+    'upf': 'gradiant/open5gs:2.7.5',
+    'pcf': 'gradiant/open5gs:2.7.5',
+    'udm': 'gradiant/open5gs:2.7.5',
+    'ausf': 'gradiant/open5gs:2.7.5'
 }
 ```
 
-- Changed UERANSIM images from `ueransim/ueransim:latest` to `ubuntu:20.04` (with UERANSIM installed at runtime)
-- Updated default fallback image to `gradiant/open5gs:latest`
+- Changed UERANSIM images from `ueransim/ueransim:latest` to `gradiant/ueransim:3.2.7`
+- Updated default fallback image to `gradiant/open5gs:2.7.5`
 
 #### 2. Updated `src/simulation/enhanced_container_manager.py`
-- Updated all Open5GS component images to use `gradiant/open5gs:latest`
-- Updated UERANSIM images to use `ubuntu:20.04`
+- Updated all Open5GS component images to use `gradiant/open5gs:2.7.5`
+- Updated UERANSIM images to use `gradiant/ueransim:3.2.7`
 
 #### 3. Created Helper Scripts
 - **`pull_images.py`**: Python script to pre-pull all required Docker images
@@ -50,8 +49,8 @@ image_map = {
 
 ### Required Docker Images
 The application now uses these publicly available images:
-- `gradiant/open5gs:latest` - for all 5G Core components (NRF, AMF, SMF, UPF, PCF, UDM, AUSF)
-- `ubuntu:20.04` - base image for gNB and UE components (UERANSIM will be installed at runtime)
+- `gradiant/open5gs:2.7.5` - for all 5G Core components (NRF, AMF, SMF, UPF, PCF, UDM, AUSF)
+- `gradiant/ueransim:3.2.7` - for gNB and UE components
 - `mongo:4.4` - for MongoDB database
 
 ### How to Use
@@ -73,6 +72,6 @@ The application should now be able to successfully pull and deploy the Docker co
 
 ### Notes
 - The Gradiant images are publicly available and don't require authentication
-- Version `latest` provides the most recent stable version of the Open5GS components
-- Ubuntu 20.04 is used as a base image for UERANSIM components, which will be configured at runtime
+- Version `2.7.5` provides a stable version of the Open5GS components
+- Version `3.2.7` provides a stable version of UERANSIM components
 - All functionality should remain the same, only the underlying Docker images have changed
