@@ -47,26 +47,20 @@ class EnhancedContainerManager:
                 "command": ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"],
                 "ports": {"7777": "7777"},
                 "depends_on": ["mongodb"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "amf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"],
                 "ports": {"38412": "38412"},
                 "depends_on": ["nrf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "smf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "upf": {
                 "image": "openverso/open5gs:latest",
@@ -74,33 +68,25 @@ class EnhancedContainerManager:
                 "ports": {"8805": "8805"},
                 "cap_add": ["NET_ADMIN"],
                 "depends_on": ["smf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "ausf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "udm": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-udmd", "-c", "/etc/open5gs/udm.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             },
             "pcf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {
-                    "/etc/open5gs": "/etc/open5gs"
-                }
+                "volumes": {}
             }
         }
         
@@ -110,18 +96,14 @@ class EnhancedContainerManager:
                 "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
-                "volumes": {
-                    "/etc/ueransim": "/etc/ueransim"
-                }
+                "volumes": {}
             },
             "ue": {
                 "image": "openverso/ueransim:latest",
                 "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
-                "volumes": {
-                    "/etc/ueransim": "/etc/ueransim"
-                }
+                "volumes": {}
             }
         }
         
@@ -232,6 +214,21 @@ class EnhancedContainerManager:
             self.create_open5gs_config(comp_type, name, properties)
             
             # Deploy container
+            # Prepare volumes correctly for Docker
+            volumes_config = config.get("volumes", {})
+            volumes_list = []
+            if volumes_config:
+                for host_path, container_path in volumes_config.items():
+                    volumes_list.append(f"{host_path}:{container_path}")
+            
+            # Prepare ports correctly for Docker
+            ports_config = config.get("ports", {})
+            ports_dict = {}
+            if ports_config:
+                for container_port, host_port in ports_config.items():
+                    if host_port:
+                        ports_dict[f"{container_port}"] = host_port
+            
             container = self.client.containers.run(
                 config.get("image", "openverso/open5gs:latest"),
                 command=config.get("command", "sleep infinity"),
@@ -246,8 +243,8 @@ class EnhancedContainerManager:
                     'COMPONENT_NAME': name,
                     **config.get("environment", {})
                 },
-                ports=config.get("ports", {}),
-                volumes=config.get("volumes", {})
+                ports=ports_dict if ports_dict else None,
+                volumes=volumes_list if volumes_list else None
             )
             
             print(f"Deployed Open5GS {comp_type}: {name}")
@@ -283,6 +280,13 @@ class EnhancedContainerManager:
                 print(f"gNB config is not a dictionary: {type(config)}")
                 config = {"image": "openverso/ueransim:latest"}
             
+            # Prepare volumes correctly for Docker
+            volumes_config = config.get("volumes", {})
+            volumes_list = []
+            if volumes_config:
+                for host_path, container_path in volumes_config.items():
+                    volumes_list.append(f"{host_path}:{container_path}")
+            
             container = self.client.containers.run(
                 config.get("image", "openverso/ueransim:latest"),
                 command=config.get("command", "sleep infinity"),
@@ -298,7 +302,7 @@ class EnhancedContainerManager:
                     'TAC': str(properties.get('tac', 1)),
                     'POWER': str(properties.get('power', 20))
                 },
-                volumes=config.get("volumes", {})
+                volumes=volumes_list if volumes_list else None
             )
             
             print(f"Deployed UERANSIM gNB: {name}")
@@ -334,6 +338,13 @@ class EnhancedContainerManager:
                 print(f"UE config is not a dictionary: {type(config)}")
                 config = {"image": "openverso/ueransim:latest"}
             
+            # Prepare volumes correctly for Docker
+            volumes_config = config.get("volumes", {})
+            volumes_list = []
+            if volumes_config:
+                for host_path, container_path in volumes_config.items():
+                    volumes_list.append(f"{host_path}:{container_path}")
+            
             container = self.client.containers.run(
                 config.get("image", "openverso/ueransim:latest"),
                 command=config.get("command", "sleep infinity"), 
@@ -348,7 +359,7 @@ class EnhancedContainerManager:
                     'COMPONENT_NAME': name,
                     'IMSI': properties.get('imsi', '001010000000001')
                 },
-                volumes=config.get("volumes", {})
+                volumes=volumes_list if volumes_list else None
             )
             
             print(f"Deployed UERANSIM UE: {name}")
