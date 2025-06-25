@@ -17,7 +17,7 @@ def test_imports():
         print("✅ PyQt5 import successful")
     except ImportError as e:
         print(f"❌ PyQt5 import failed: {e}")
-        return False
+        assert False, f"PyQt5 import failed: {e}"
     
     try:
         import docker
@@ -25,23 +25,24 @@ def test_imports():
     except ImportError as e:
         print(f"❌ Docker import failed: {e}")
         print("Install with: pip install docker")
-        return False
+        assert False, f"Docker import failed: {e}"
         
     try:
         from gui.main_window import MainWindow
         print("✅ MainWindow import successful")
     except ImportError as e:
         print(f"❌ MainWindow import failed: {e}")
-        return False
+        assert False, f"MainWindow import failed: {e}"
         
     try:
         from simulation.enhanced_container_manager import EnhancedContainerManager
         print("✅ EnhancedContainerManager import successful")
     except ImportError as e:
         print(f"❌ EnhancedContainerManager import failed: {e}")
-        return False
+        assert False, f"EnhancedContainerManager import failed: {e}"
         
-    return True
+    # If we reach here, all imports succeeded
+    assert True
 
 def test_docker_connection():
     """Test Docker connection"""
@@ -52,11 +53,11 @@ def test_docker_connection():
         client = docker.from_env()
         info = client.info()
         print(f"✅ Docker connected - version: {info.get('ServerVersion', 'unknown')}")
-        return True
+        assert True
     except Exception as e:
         print(f"❌ Docker connection failed: {e}")
         print("Make sure Docker Desktop is running")
-        return False
+        assert False, f"Docker connection failed: {e}"
 
 def run_basic_test():
     """Run basic application test"""
