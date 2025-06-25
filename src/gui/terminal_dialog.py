@@ -130,7 +130,8 @@ class TerminalDialog(QDialog):
         
         layout.addWidget(splitter)
         self.setLayout(layout)
-          def refresh_containers(self):
+
+    def refresh_containers(self):
         """Refresh the container list"""
         self.container_list.clear()
         
@@ -174,7 +175,7 @@ class TerminalDialog(QDialog):
         current_item = self.container_list.currentItem()
         if current_item:
             container_name = current_item.data(Qt.UserRole)
-            self.open_container_terminal(container_name)
+            self.open_container_terminal(current_item)
     
     def open_container_terminal(self, item):
         """Open terminal to specific container"""
@@ -323,56 +324,12 @@ class TerminalDialog(QDialog):
                 
         except Exception as e:
             self.output_text.append(f"❌ Error getting interfaces: {e}")
-                    
-                    # Create list item with status info
-                    item_text = f"{name} ({status}) - {ip}"
-                    item = QListWidgetItem(item_text)
-                    item.setData(Qt.UserRole, name)  # Store container name
-                    
-                    # Color code by status
-                    if status == 'running':
-                        item.setBackground(Qt.green)
-                    elif status == 'exited':
-                        item.setBackground(Qt.red)
-                    else:
-                        item.setBackground(Qt.yellow)
-                    
-                    self.container_list.addItem(item)
-                    
-                except Exception as e:
-                    item_text = f"{name} (error: {str(e)})"
-                    item = QListWidgetItem(item_text)
-                    item.setData(Qt.UserRole, name)
-                    item.setBackground(Qt.red)
-                    self.container_list.addItem(item)
-                    
-        except Exception as e:
-            self.append_output(f"Error refreshing containers: {str(e)}")
     
-    def open_selected_terminal(self):
-        """Open terminal for selected container"""
-        current_item = self.container_list.currentItem()
-        if current_item:
-            container_name = current_item.data(Qt.UserRole)
-            self.open_container_terminal(current_item)
-    
-    def open_container_terminal(self, item):
-        """Open external terminal for container"""
-        container_name = item.data(Qt.UserRole)
-        
-        try:
-            self.container_manager.open_container_terminal(container_name)
-            self.append_output(f"Opened terminal for {container_name}")
-        except Exception as e:
-            self.append_output(f"Error opening terminal for {container_name}: {str(e)}")
-    
-    def execute_command(self):
-        """Execute command in selected container"""
-        current_item = self.container_list.currentItem()
-        command = self.cmd_input.text().strip()
-        
-        if not current_item or not command:
-            return
+    def closeEvent(self, event):
+        """Clean up when dialog is closed"""
+        if hasattr(self, 'refresh_timer'):
+            self.refresh_timer.stop()
+        super().closeEvent(event)
             
         container_name = current_item.data(Qt.UserRole)
         
