@@ -40,27 +40,35 @@ class EnhancedContainerManager:
                 "image": "mongo:4.4",
                 "ports": {"27017": "27017"},
                 "environment": {},
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "256m",
+                "memswap_limit": "256m"
             },
             "nrf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"],
                 "ports": {"7777": "7777"},
                 "depends_on": ["mongodb"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             },
             "amf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"],
                 "ports": {"38412": "38412"},
                 "depends_on": ["nrf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             },
             "smf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             },
             "upf": {
                 "image": "openverso/open5gs:latest",
@@ -68,25 +76,33 @@ class EnhancedContainerManager:
                 "ports": {"8805": "8805"},
                 "cap_add": ["NET_ADMIN"],
                 "depends_on": ["smf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "256m",
+                "memswap_limit": "256m"
             },
             "ausf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             },
             "udm": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-udmd", "-c", "/etc/open5gs/udm.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             },
             "pcf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml"],
                 "depends_on": ["nrf"],
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             }
         }
         
@@ -96,14 +112,18 @@ class EnhancedContainerManager:
                 "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "256m",
+                "memswap_limit": "256m"
             },
             "ue": {
                 "image": "towards5gs/ueransim-ue:v3.2.3",
                 "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
-                "volumes": {}
+                "volumes": {},
+                "mem_limit": "128m",
+                "memswap_limit": "128m"
             }
         }
         
@@ -179,8 +199,23 @@ class EnhancedContainerManager:
                                  if c.component_type in deployment_order else 999)
         
         for component in sorted_components:
+            # Check memory before deploying each component
+            try:
+                import psutil
+                available_memory = psutil.virtual_memory().available / (1024**3)
+                print(f"Available memory before deploying {component.component_type}: {available_memory:.1f}GB")
+                
+                if available_memory < 1.0:  # Less than 1GB available
+                    print(f"⚠️ Low memory warning: {available_memory:.1f}GB available")
+                    print("Stopping deployment to prevent system instability")
+                    return False, f"Insufficient memory to continue deployment. Available: {available_memory:.1f}GB"
+            except ImportError:
+                pass  # psutil not available, continue anyway
+            
             container = None
             comp_type = component.component_type
+            
+            print(f"Deploying {comp_type}: {getattr(component, 'properties', {}).get('name', 'unnamed')}")
             
             if comp_type == 'mongodb':
                 container = self.deploy_mongodb_component(component)
@@ -200,6 +235,15 @@ class EnhancedContainerManager:
                     self.open5gs_containers[comp_type] = container
                 elif comp_type in ['gnb', 'ue']:
                     self.ueransim_containers[comp_type] = container
+                
+                # Wait for container to stabilize before deploying next
+                import time
+                time.sleep(3)
+                print(f"✅ {comp_type} deployed and stabilizing...")
+            
+            else:
+                print(f"❌ Failed to deploy {comp_type}")
+                # Continue with other components even if one fails
         
         return True, f"Deployed {len(deployed)} containers"
     
@@ -269,7 +313,9 @@ class EnhancedContainerManager:
                 },
                 ports=ports_dict if ports_dict else None,
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"}
+                restart_policy={"Name": "unless-stopped"},
+                mem_limit=config.get("mem_limit", "256m"),
+                memswap_limit=config.get("memswap_limit", "256m")
             )
             
             print(f"Deployed Open5GS {comp_type}: {name}")
@@ -331,7 +377,9 @@ class EnhancedContainerManager:
                     'POWER': str(props_copy.get('power', 20))
                 },
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"}
+                restart_policy={"Name": "unless-stopped"},
+                mem_limit=config.get("mem_limit", "256m"),
+                memswap_limit=config.get("memswap_limit", "256m")
             )
             
             print(f"Deployed UERANSIM gNB: {name}")
@@ -392,7 +440,9 @@ class EnhancedContainerManager:
                     'IMSI': props_copy.get('imsi', '001010000000001')
                 },
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"}
+                restart_policy={"Name": "unless-stopped"},
+                mem_limit=config.get("mem_limit", "128m"),
+                memswap_limit=config.get("memswap_limit", "128m")
             )
             
             print(f"Deployed UERANSIM UE: {name}")
@@ -445,7 +495,9 @@ class EnhancedContainerManager:
                 remove=False,
                 environment=config.get("environment", {}),
                 ports=ports_dict if ports_dict else None,
-                restart_policy={"Name": "unless-stopped"}
+                restart_policy={"Name": "unless-stopped"},
+                mem_limit=config.get("mem_limit", "256m"),
+                memswap_limit=config.get("memswap_limit", "256m")
             )
             
             print(f"Deployed MongoDB: {name}")
