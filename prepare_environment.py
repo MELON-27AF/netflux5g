@@ -16,7 +16,8 @@ def signal_handler(sig, frame):
     print("You can resume by running this script again or manually pull images with:")
     print("  docker pull mongo:4.4")
     print("  docker pull openverso/open5gs:latest")
-    print("  docker pull openverso/ueransim:latest")
+    print("  docker pull towards5gs/ueransim-gnb:v3.2.3")
+    print("  docker pull towards5gs/ueransim-ue:v3.2.3")
     sys.exit(0)
 
 def check_docker():
@@ -99,8 +100,9 @@ def estimate_download_size():
     print("\n📊 Estimated download sizes:")
     print("  - mongo:4.4: ~400 MB")
     print("  - openverso/open5gs:latest: ~200 MB")
-    print("  - openverso/ueransim:latest: ~150 MB")
-    print("  Total: ~750 MB")
+    print("  - towards5gs/ueransim-gnb:v3.2.3: ~100 MB")
+    print("  - towards5gs/ueransim-ue:v3.2.3: ~100 MB")
+    print("  Total: ~800 MB")
     print("\nNote: Actual sizes may vary based on your system and existing layers.")
 
 def main():
@@ -130,7 +132,8 @@ def main():
     required_images = [
         "mongo:4.4",
         "openverso/open5gs:latest",
-        "openverso/ueransim:latest"
+        "towards5gs/ueransim-gnb:v3.2.3",
+        "towards5gs/ueransim-ue:v3.2.3"
     ]
     
     print(f"\n🐳 Preparing to pull {len(required_images)} Docker images...")

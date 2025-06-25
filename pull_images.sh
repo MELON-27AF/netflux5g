@@ -8,11 +8,12 @@ echo "============================================================"
 
 # List of required images
 images=(
-    "openverso/open5gs:latest"    # Open5GS 5G Core components
-    "openverso/ueransim:latest"   # UERANSIM gNB and UE components
-    "mongo:4.4"                   # MongoDB for Open5GS
-    "ubuntu:20.04"                # Base Ubuntu for custom containers
-    "alpine:latest"               # Lightweight base image
+    "openverso/open5gs:latest"         # Open5GS 5G Core components
+    "towards5gs/ueransim-gnb:v3.2.3"   # UERANSIM gNB component
+    "towards5gs/ueransim-ue:v3.2.3"    # UERANSIM UE component
+    "mongo:4.4"                        # MongoDB for Open5GS
+    "ubuntu:20.04"                     # Base Ubuntu for custom containers
+    "alpine:latest"                    # Lightweight base image
 )
 
 # Pull each image

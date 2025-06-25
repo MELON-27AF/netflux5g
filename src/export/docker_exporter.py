@@ -79,7 +79,7 @@ class DockerExporter:
                 ]
 
             elif component.component_type == "gnb":
-                service["image"] = "openverso/ueransim:latest"
+                service["image"] = "towards5gs/ueransim-gnb:v3.2.3"
                 service["environment"] = [
                     f"GNB_NAME={service_name}",
                     f"TAC={component.properties.get('tac', 1)}",
@@ -90,7 +90,7 @@ class DockerExporter:
                 service["privileged"] = True
 
             elif component.component_type == "ue":
-                service["image"] = "openverso/ueransim:latest"
+                service["image"] = "towards5gs/ueransim-ue:v3.2.3"
                 service["environment"] = [
                     f"UE_NAME={service_name}",
                     f"IMSI={component.properties.get('imsi', '001010000000001')}",

@@ -67,7 +67,7 @@ services:
       - netflux5g_network
 
   gnb:
-    image: openverso/ueransim:latest
+    image: towards5gs/ueransim-gnb:v3.2.3
     container_name: netflux5g_gnb
     command: ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"]
     restart: unless-stopped
@@ -82,7 +82,7 @@ services:
       - netflux5g_network
 
   ue:
-    image: openverso/ueransim:latest
+    image: towards5gs/ueransim-ue:v3.2.3
     container_name: netflux5g_ue
     command: ["nr-ue", "-c", "/etc/ueransim/ue.yaml"]
     restart: unless-stopped

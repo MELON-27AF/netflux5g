@@ -92,14 +92,14 @@ class EnhancedContainerManager:
         
         self.ueransim_config = {
             "gnb": {
-                "image": "openverso/ueransim:latest",
+                "image": "towards5gs/ueransim-gnb:v3.2.3",
                 "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {}
             },
             "ue": {
-                "image": "openverso/ueransim:latest",
+                "image": "towards5gs/ueransim-ue:v3.2.3",
                 "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
@@ -306,7 +306,7 @@ class EnhancedContainerManager:
             # Ensure config is a dictionary (defensive programming)
             if not isinstance(config, dict):
                 print(f"gNB config is not a dictionary: {type(config)}")
-                config = {"image": "openverso/ueransim:latest"}
+                config = {"image": "towards5gs/ueransim-gnb:v3.2.3"}
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -316,7 +316,7 @@ class EnhancedContainerManager:
                     volumes_list.append(f"{host_path}:{container_path}")
             
             container = self.client.containers.run(
-                config.get("image", "openverso/ueransim:latest"),
+                config.get("image", "towards5gs/ueransim-gnb:v3.2.3"),
                 command=config.get("command", "sleep infinity"),
                 name=name,
                 network=self.network_name,
@@ -368,7 +368,7 @@ class EnhancedContainerManager:
             # Ensure config is a dictionary (defensive programming)
             if not isinstance(config, dict):
                 print(f"UE config is not a dictionary: {type(config)}")
-                config = {"image": "openverso/ueransim:latest"}
+                config = {"image": "towards5gs/ueransim-ue:v3.2.3"}
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -378,7 +378,7 @@ class EnhancedContainerManager:
                     volumes_list.append(f"{host_path}:{container_path}")
             
             container = self.client.containers.run(
-                config.get("image", "openverso/ueransim:latest"),
+                config.get("image", "towards5gs/ueransim-ue:v3.2.3"),
                 command=config.get("command", "sleep infinity"), 
                 name=name,
                 network=self.network_name,
@@ -839,7 +839,8 @@ logger:
         required_images = [
             "mongo:4.4",
             "openverso/open5gs:latest", 
-            "openverso/ueransim:latest"
+            "towards5gs/ueransim-gnb:v3.2.3",
+            "towards5gs/ueransim-ue:v3.2.3"
         ]
         
         print("Pre-pulling required Docker images...")

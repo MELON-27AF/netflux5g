@@ -139,7 +139,7 @@ class ContainerManager:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'openverso/ueransim:latest',
+                'towards5gs/ueransim-gnb:v3.2.3',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -173,7 +173,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'openverso/ueransim:latest',
+                'towards5gs/ueransim-ue:v3.2.3',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,

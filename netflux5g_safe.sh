@@ -102,7 +102,7 @@ fi
 # Ask user if they want to pre-pull Docker images
 echo ""
 echo -e "${BLUE}Docker Image Preparation${NC}"
-echo "NetFlux5G requires several Docker images (~750MB total download)"
+echo "NetFlux5G requires several Docker images (~800MB total download)"
 echo "You can:"
 echo "1. Pre-pull images now (recommended for first run)"
 echo "2. Skip and let NetFlux5G pull them as needed"
