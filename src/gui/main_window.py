@@ -95,7 +95,9 @@ class MainWindow(QMainWindow):
 
         self.exit_action = QAction("E&xit", self)
         self.exit_action.setShortcut("Ctrl+Q")
-        self.exit_action.triggered.connect(self.close)        # Simulation actions
+        self.exit_action.triggered.connect(self.close)
+        
+        # Simulation actions
         self.simulate_action = QAction("Run &Simulation", self)
         self.simulate_action.setShortcut("F5")
         self.simulate_action.triggered.connect(self.run_simulation)
@@ -261,7 +263,8 @@ class MainWindow(QMainWindow):
         try:
             logging.info("Starting simulation...")
             
-            # Check if simulation is already running            if self.current_simulator:
+            # Check if simulation is already running
+            if self.current_simulator:
                 reply = QMessageBox.question(
                     self, "Simulation Running",
                     "A simulation is already running. Stop it and start a new one?",
