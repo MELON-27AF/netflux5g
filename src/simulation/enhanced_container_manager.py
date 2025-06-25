@@ -196,8 +196,11 @@ class EnhancedContainerManager:
             if not isinstance(properties, dict):
                 print(f"WARNING: Properties was {type(properties)}, converting to dict")
                 properties = {}
+            
+            # Store a copy of properties to prevent accidental overwriting
+            props_copy = dict(properties)
                 
-            name = properties.get("name", f"{comp_type}_{comp_id}")
+            name = props_copy.get("name", f"{comp_type}_{comp_id}")
             
             if comp_type not in self.open5gs_config:
                 print(f"Unknown Open5GS component type: {comp_type}")
@@ -211,7 +214,7 @@ class EnhancedContainerManager:
                 config = {"image": "openverso/open5gs:latest"}
             
             # Create configuration files if needed
-            self.create_open5gs_config(comp_type, name, properties)
+            self.create_open5gs_config(comp_type, name, props_copy)
             
             # Deploy container
             # Prepare volumes correctly for Docker
@@ -267,11 +270,14 @@ class EnhancedContainerManager:
             if not isinstance(properties, dict):
                 print(f"WARNING: gNB properties was {type(properties)}, converting to dict")
                 properties = {}
+            
+            # Store a copy of properties to prevent accidental overwriting
+            props_copy = dict(properties)
                 
-            name = properties.get("name", f"gnb_{comp_id}")
+            name = props_copy.get("name", f"gnb_{comp_id}")
             
             # Create gNB configuration
-            self.create_gnb_config(name, properties)
+            self.create_gnb_config(name, props_copy)
             
             config = self.ueransim_config["gnb"]
             
@@ -299,8 +305,8 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'gnb',
                     'COMPONENT_NAME': name,
-                    'TAC': str(properties.get('tac', 1)),
-                    'POWER': str(properties.get('power', 20))
+                    'TAC': str(props_copy.get('tac', 1)),
+                    'POWER': str(props_copy.get('power', 20))
                 },
                 volumes=volumes_list if volumes_list else None
             )
@@ -325,11 +331,14 @@ class EnhancedContainerManager:
             if not isinstance(properties, dict):
                 print(f"WARNING: UE properties was {type(properties)}, converting to dict")
                 properties = {}
+            
+            # Store a copy of properties to prevent accidental overwriting
+            props_copy = dict(properties)
                 
-            name = properties.get("name", f"ue_{comp_id}")
+            name = props_copy.get("name", f"ue_{comp_id}")
             
             # Create UE configuration
-            self.create_ue_config(name, properties)
+            self.create_ue_config(name, props_copy)
             
             config = self.ueransim_config["ue"]
             
@@ -357,7 +366,7 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'ue',
                     'COMPONENT_NAME': name,
-                    'IMSI': properties.get('imsi', '001010000000001')
+                    'IMSI': props_copy.get('imsi', '001010000000001')
                 },
                 volumes=volumes_list if volumes_list else None
             )
