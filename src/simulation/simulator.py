@@ -160,7 +160,8 @@ class NetworkSimulator:
                         }
                         
                     elif comp_type in ["gnb", "ue"] or "ran" in comp_type.lower() or "antenna" in comp_type.lower():
-                        # RAN components                        if comp_type == "gnb":
+                        # RAN components
+                        if comp_type == "gnb":
                             # gNB specific metrics
                             power = component.properties.get("power", 20) if hasattr(component, 'properties') else 20
                             connected_ues = sum(1 for c in connections if (c.source == component and getattr(c.target, 'component_type', '') == "ue") or 
