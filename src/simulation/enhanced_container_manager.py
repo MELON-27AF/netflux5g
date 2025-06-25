@@ -206,7 +206,12 @@ class EnhancedContainerManager:
             comp_type = component.component_type
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"{comp_type}_{comp_id}") if isinstance(properties, dict) else f"{comp_type}_{comp_id}"
+            
+            # Ensure properties is a dictionary
+            if not isinstance(properties, dict):
+                properties = {}
+                
+            name = properties.get("name", f"{comp_type}_{comp_id}")
             
             if comp_type not in self.open5gs_config:
                 print(f"Unknown Open5GS component type: {comp_type}")
@@ -215,7 +220,7 @@ class EnhancedContainerManager:
             config = self.open5gs_config[comp_type]
             
             # Create configuration files if needed
-            self.create_open5gs_config(comp_type, name, properties if isinstance(properties, dict) else {})
+            self.create_open5gs_config(comp_type, name, properties)
             
             # Deploy container
             container = self.client.containers.run(
@@ -248,10 +253,15 @@ class EnhancedContainerManager:
         try:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"gnb_{comp_id}") if isinstance(properties, dict) else f"gnb_{comp_id}"
+            
+            # Ensure properties is a dictionary
+            if not isinstance(properties, dict):
+                properties = {}
+                
+            name = properties.get("name", f"gnb_{comp_id}")
             
             # Create gNB configuration
-            self.create_gnb_config(name, properties if isinstance(properties, dict) else {})
+            self.create_gnb_config(name, properties)
             
             config = self.ueransim_config["gnb"]
             
@@ -267,8 +277,8 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'gnb',
                     'COMPONENT_NAME': name,
-                    'TAC': str(properties.get('tac', 1)) if isinstance(properties, dict) else '1',
-                    'POWER': str(properties.get('power', 20)) if isinstance(properties, dict) else '20'
+                    'TAC': str(properties.get('tac', 1)),
+                    'POWER': str(properties.get('power', 20))
                 },
                 volumes=config.get("volumes", {})
             )
@@ -285,10 +295,15 @@ class EnhancedContainerManager:
         try:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"ue_{comp_id}") if isinstance(properties, dict) else f"ue_{comp_id}"
+            
+            # Ensure properties is a dictionary
+            if not isinstance(properties, dict):
+                properties = {}
+                
+            name = properties.get("name", f"ue_{comp_id}")
             
             # Create UE configuration
-            self.create_ue_config(name, properties if isinstance(properties, dict) else {})
+            self.create_ue_config(name, properties)
             
             config = self.ueransim_config["ue"]
             
@@ -304,7 +319,7 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'ue',
                     'COMPONENT_NAME': name,
-                    'IMSI': properties.get('imsi', '001010000000001') if isinstance(properties, dict) else '001010000000001'
+                    'IMSI': properties.get('imsi', '001010000000001')
                 },
                 volumes=config.get("volumes", {})
             )

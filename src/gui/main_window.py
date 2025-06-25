@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
             
             container_text = QTextEdit()
             container_text.setReadOnly(True)
-            container_text.setOpenExternalLinks(False)
+            # QTextEdit doesn't have setOpenExternalLinks method
             
             containers = simulation_data['container_deployment']['containers']
             container_content = "<h2>Container Status</h2>"
