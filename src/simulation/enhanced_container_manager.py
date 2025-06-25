@@ -109,7 +109,7 @@ class EnhancedContainerManager:
         self.ueransim_config = {
             "gnb": {
                 "image": "towards5gs/ueransim-gnb:v3.2.3",
-                "command": ["/ueransim/bin/nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
+                "command": ["/ueransim/build/nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
@@ -118,12 +118,25 @@ class EnhancedContainerManager:
             },
             "ue": {
                 "image": "towards5gs/ueransim-ue:v3.2.3",
-                "command": ["/ueransim/bin/nr-ue", "-c", "/etc/ueransim/ue.yaml"],
+                "command": ["/ueransim/build/nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
                 "mem_limit": "128m",
                 "memswap_limit": "128m"
+            }
+        }
+        
+        # Network infrastructure components
+        self.network_config = {
+            "router": {
+                "image": "alpine:latest",
+                "command": ["sh", "-c", "apk add --no-cache iptables && sleep infinity"],
+                "cap_add": ["NET_ADMIN"],
+                "privileged": True,
+                "volumes": {},
+                "mem_limit": "64m",
+                "memswap_limit": "64m"
             }
         }
         
