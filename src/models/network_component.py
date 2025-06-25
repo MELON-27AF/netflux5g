@@ -116,8 +116,15 @@ class NetworkComponent(QGraphicsItem):
         return self.links
 
     def get_properties(self):
+        # Ensure properties is always a dictionary (defensive programming)
+        if not isinstance(self.properties, dict):
+            self.properties = {"name": f"{self.component_type}_{self.component_id}"}
         return self.properties
 
     def set_properties(self, properties):
-        self.properties.update(properties)
+        # Ensure properties is always a dictionary
+        if not isinstance(self.properties, dict):
+            self.properties = {}
+        if isinstance(properties, dict):
+            self.properties.update(properties)
         self.update()  # Redraw component with new properties

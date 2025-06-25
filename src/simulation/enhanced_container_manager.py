@@ -207,8 +207,12 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
+            # Debug logging
+            print(f"DEBUG: Deploying {comp_type}, properties type: {type(properties)}, value: {properties}")
+            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
+                print(f"WARNING: Properties was {type(properties)}, converting to dict")
                 properties = {}
                 
             name = properties.get("name", f"{comp_type}_{comp_id}")
@@ -219,12 +223,17 @@ class EnhancedContainerManager:
             
             config = self.open5gs_config[comp_type]
             
+            # Ensure config is a dictionary (defensive programming)
+            if not isinstance(config, dict):
+                print(f"Config for {comp_type} is not a dictionary: {type(config)}")
+                config = {"image": "openverso/open5gs:latest"}
+            
             # Create configuration files if needed
             self.create_open5gs_config(comp_type, name, properties)
             
             # Deploy container
             container = self.client.containers.run(
-                config["image"],
+                config.get("image", "openverso/open5gs:latest"),
                 command=config.get("command", "sleep infinity"),
                 name=name,
                 network=self.network_name,
@@ -254,8 +263,12 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
+            # Debug logging
+            print(f"DEBUG: Deploying gNB, properties type: {type(properties)}, value: {properties}")
+            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
+                print(f"WARNING: gNB properties was {type(properties)}, converting to dict")
                 properties = {}
                 
             name = properties.get("name", f"gnb_{comp_id}")
@@ -265,8 +278,13 @@ class EnhancedContainerManager:
             
             config = self.ueransim_config["gnb"]
             
+            # Ensure config is a dictionary (defensive programming)
+            if not isinstance(config, dict):
+                print(f"gNB config is not a dictionary: {type(config)}")
+                config = {"image": "openverso/ueransim:latest"}
+            
             container = self.client.containers.run(
-                config["image"],
+                config.get("image", "openverso/ueransim:latest"),
                 command=config.get("command", "sleep infinity"),
                 name=name,
                 network=self.network_name,
@@ -296,8 +314,12 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
+            # Debug logging
+            print(f"DEBUG: Deploying UE, properties type: {type(properties)}, value: {properties}")
+            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
+                print(f"WARNING: UE properties was {type(properties)}, converting to dict")
                 properties = {}
                 
             name = properties.get("name", f"ue_{comp_id}")
@@ -307,8 +329,13 @@ class EnhancedContainerManager:
             
             config = self.ueransim_config["ue"]
             
+            # Ensure config is a dictionary (defensive programming)
+            if not isinstance(config, dict):
+                print(f"UE config is not a dictionary: {type(config)}")
+                config = {"image": "openverso/ueransim:latest"}
+            
             container = self.client.containers.run(
-                config["image"],
+                config.get("image", "openverso/ueransim:latest"),
                 command=config.get("command", "sleep infinity"), 
                 name=name,
                 network=self.network_name,
