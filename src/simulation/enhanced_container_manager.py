@@ -140,6 +140,34 @@ class EnhancedContainerManager:
             }
         }
         
+    def cleanup_existing_containers(self):
+        """Clean up any existing containers with our naming pattern"""
+        try:
+            # Get all containers (including stopped ones)
+            all_containers = self.client.containers.list(all=True)
+            
+            # Names to look for
+            container_patterns = [
+                'nrf-test', 'amf-test', 'smf-test', 'upf-test', 
+                'ausf-test', 'udm-test', 'pcf-test', 'gnb-test', 
+                'ue-test', 'internet-gw', 'router'
+            ]
+            
+            for container in all_containers:
+                container_name = container.name
+                if any(pattern in container_name for pattern in container_patterns):
+                    try:
+                        logging.info(f"Cleaning up existing container: {container_name}")
+                        if container.status == 'running':
+                            container.stop(timeout=5)
+                        container.remove()
+                        print(f"✅ Removed existing container: {container_name}")
+                    except Exception as e:
+                        logging.warning(f"Could not remove container {container_name}: {e}")
+                        
+        except Exception as e:
+            logging.error(f"Error during cleanup of existing containers: {e}")
+        
     def create_5g_network(self):
         """Create a Docker network for 5G components"""
         if not self.client:
@@ -184,6 +212,10 @@ class EnhancedContainerManager:
             # Test Docker connection
             self.client.ping()
             print("✅ Docker is running and accessible")
+            
+            # Clean up any existing containers first
+            self.cleanup_existing_containers()
+            
         except Exception as e:
             print(f"❌ Docker connection failed: {e}")
             return False, f"Docker connection failed: {e}"
@@ -238,6 +270,8 @@ class EnhancedContainerManager:
                 container = self.deploy_gnb_component(component)
             elif comp_type == 'ue':
                 container = self.deploy_ue_component(component)
+            elif comp_type == 'router':
+                container = self.deploy_router_component(component)
                 
             if container:
                 deployed.append(container)
@@ -326,7 +360,7 @@ class EnhancedContainerManager:
                 },
                 ports=ports_dict if ports_dict else None,
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"},
+                restart_policy={"Name": "no"},
                 mem_limit=config.get("mem_limit", "256m"),
                 memswap_limit=config.get("memswap_limit", "256m")
             )
@@ -390,7 +424,7 @@ class EnhancedContainerManager:
                     'POWER': str(props_copy.get('power', 20))
                 },
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"},
+                restart_policy={"Name": "no"},
                 mem_limit=config.get("mem_limit", "256m"),
                 memswap_limit=config.get("memswap_limit", "256m")
             )
@@ -453,7 +487,7 @@ class EnhancedContainerManager:
                     'IMSI': props_copy.get('imsi', '001010000000001')
                 },
                 volumes=volumes_list if volumes_list else None,
-                restart_policy={"Name": "unless-stopped"},
+                restart_policy={"Name": "no"},
                 mem_limit=config.get("mem_limit", "128m"),
                 memswap_limit=config.get("memswap_limit", "128m")
             )
@@ -463,6 +497,44 @@ class EnhancedContainerManager:
             
         except Exception as e:
             print(f"Error deploying UE: {e}")
+            return None
+    
+    def deploy_router_component(self, component):
+        """Deploy router component using Alpine Linux with networking tools"""
+        try:
+            properties = getattr(component, 'properties', {})
+            comp_id = getattr(component, 'component_id', id(component))
+            
+            # Ensure properties is a dictionary
+            if not isinstance(properties, dict):
+                properties = {}
+            
+            name = properties.get("name", f"router_{comp_id}")
+            
+            config = self.network_config["router"]
+            
+            container = self.client.containers.run(
+                config.get("image", "alpine:latest"),
+                command=config.get("command"),
+                name=name,
+                network=self.network_name,
+                detach=True,
+                remove=False,
+                cap_add=config.get("cap_add", []),
+                privileged=config.get("privileged", False),
+                environment={
+                    'COMPONENT_TYPE': 'router',
+                    'COMPONENT_NAME': name,
+                },
+                mem_limit=config.get("mem_limit", "64m"),
+                memswap_limit=config.get("memswap_limit", "64m")
+            )
+            
+            print(f"Deployed router: {name}")
+            return container
+            
+        except Exception as e:
+            print(f"Error deploying router: {e}")
             return None
     
     def deploy_mongodb_component(self, component):
@@ -508,7 +580,7 @@ class EnhancedContainerManager:
                 remove=False,
                 environment=config.get("environment", {}),
                 ports=ports_dict if ports_dict else None,
-                restart_policy={"Name": "unless-stopped"},
+                restart_policy={"Name": "no"},
                 mem_limit=config.get("mem_limit", "256m"),
                 memswap_limit=config.get("memswap_limit", "256m")
             )
