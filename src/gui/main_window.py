@@ -362,23 +362,22 @@ class MainWindow(QMainWindow):
             
             container_text = QTextEdit()
             container_text.setReadOnly(True)
+            container_text.setOpenExternalLinks(False)
             
             containers = simulation_data['container_deployment']['containers']
             container_content = "<h2>Container Status</h2>"
             container_content += f"<p><b>Status:</b> {simulation_data['container_deployment']['status']}</p>"
             container_content += f"<p><b>Message:</b> {simulation_data['container_deployment']['message']}</p>"
             container_content += "<h3>Deployed Containers:</h3>"
-            container_content += "<table border='1'><tr><th>Name</th><th>Status</th><th>IP Address</th><th>Container ID</th><th>Action</th></tr>"
+            container_content += "<table border='1'><tr><th>Name</th><th>Status</th><th>IP Address</th><th>Container ID</th></tr>"
             
             for container in containers:
-                container_content += f"<tr><td>{container['name']}</td><td>{container['status']}</td><td>{container.get('ip', 'N/A')}</td><td>{container.get('id', 'N/A')}</td><td><a href='#{container['name']}'>Open Terminal</a></td></tr>"
+                container_content += f"<tr><td>{container['name']}</td><td>{container['status']}</td><td>{container.get('ip', 'N/A')}</td><td>{container.get('id', 'N/A')}</td></tr>"
             
             container_content += "</table>"
+            container_content += "<p><i>Use the terminal dialog to access containers directly.</i></p>"
             
             container_text.setHtml(container_content)
-            
-            # Connect link clicks to terminal opening
-            container_text.anchorClicked.connect(self.open_container_terminal)
             
             container_layout.addWidget(container_text)
             container_tab.setLayout(container_layout)

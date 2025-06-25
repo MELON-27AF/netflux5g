@@ -89,13 +89,13 @@ class ContainerManager:
             comp_id = getattr(component, 'component_id', id(component))            
             name = properties.get("name", f"{comp_type}_{comp_id}")              # Use Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'open5gs/open5gs-nrf',
-                'amf': 'open5gs/open5gs-amf', 
-                'smf': 'open5gs/open5gs-smf',
-                'upf': 'open5gs/open5gs-upf',
-                'pcf': 'open5gs/open5gs-pcf',
-                'udm': 'open5gs/open5gs-udm',
-                'ausf': 'open5gs/open5gs-ausf'
+                'nrf': 'gradiant/open5gs:2.4.9',
+                'amf': 'gradiant/open5gs:2.4.9', 
+                'smf': 'gradiant/open5gs:2.4.9',
+                'upf': 'gradiant/open5gs:2.4.9',
+                'pcf': 'gradiant/open5gs:2.4.9',
+                'udm': 'gradiant/open5gs:2.4.9',
+                'ausf': 'gradiant/open5gs:2.4.9'
             }
             
             image = image_map.get(component.component_type, 'open5gs/open5gs-nrf')
@@ -139,7 +139,7 @@ class ContainerManager:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'open5gs/ueransim-gnb',
+                'towards5gs/ueransim:v3.2.6',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -173,7 +173,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'open5gs/ueransim-ue',
+                'towards5gs/ueransim:v3.2.6',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,

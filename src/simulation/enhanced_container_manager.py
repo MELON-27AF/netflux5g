@@ -43,7 +43,7 @@ class EnhancedContainerManager:
                 "volumes": {}
             },
             "nrf": {
-                "image": "open5gs/open5gs-nrf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"],
                 "ports": {"7777": "7777"},
                 "depends_on": ["mongodb"],
@@ -52,7 +52,7 @@ class EnhancedContainerManager:
                 }
             },
             "amf": {
-                "image": "open5gs/open5gs-amf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"],
                 "ports": {"38412": "38412"},
                 "depends_on": ["nrf"],
@@ -61,7 +61,7 @@ class EnhancedContainerManager:
                 }
             },
             "smf": {
-                "image": "open5gs/open5gs-smf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
@@ -69,7 +69,7 @@ class EnhancedContainerManager:
                 }
             },
             "upf": {
-                "image": "open5gs/open5gs-upf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-upfd", "-c", "/etc/open5gs/upf.yaml"],
                 "ports": {"8805": "8805"},
                 "cap_add": ["NET_ADMIN"],
@@ -79,7 +79,7 @@ class EnhancedContainerManager:
                 }
             },
             "ausf": {
-                "image": "open5gs/open5gs-ausf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
@@ -87,7 +87,7 @@ class EnhancedContainerManager:
                 }
             },
             "udm": {
-                "image": "open5gs/open5gs-udm",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-udmd", "-c", "/etc/open5gs/udm.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
@@ -95,7 +95,7 @@ class EnhancedContainerManager:
                 }
             },
             "pcf": {
-                "image": "open5gs/open5gs-pcf",
+                "image": "gradiant/open5gs:2.4.9",
                 "command": ["open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {
@@ -106,7 +106,7 @@ class EnhancedContainerManager:
         
         self.ueransim_config = {
             "gnb": {
-                "image": "open5gs/ueransim-gnb",
+                "image": "towards5gs/ueransim:v3.2.6",
                 "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
@@ -115,7 +115,7 @@ class EnhancedContainerManager:
                 }
             },
             "ue": {
-                "image": "open5gs/ueransim-ue",
+                "image": "towards5gs/ueransim:v3.2.6",
                 "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
@@ -206,7 +206,7 @@ class EnhancedContainerManager:
             comp_type = component.component_type
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"{comp_type}_{comp_id}")
+            name = properties.get("name", f"{comp_type}_{comp_id}") if isinstance(properties, dict) else f"{comp_type}_{comp_id}"
             
             if comp_type not in self.open5gs_config:
                 print(f"Unknown Open5GS component type: {comp_type}")
@@ -215,7 +215,7 @@ class EnhancedContainerManager:
             config = self.open5gs_config[comp_type]
             
             # Create configuration files if needed
-            self.create_open5gs_config(comp_type, name, properties)
+            self.create_open5gs_config(comp_type, name, properties if isinstance(properties, dict) else {})
             
             # Deploy container
             container = self.client.containers.run(
@@ -248,10 +248,10 @@ class EnhancedContainerManager:
         try:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"gnb_{comp_id}")
+            name = properties.get("name", f"gnb_{comp_id}") if isinstance(properties, dict) else f"gnb_{comp_id}"
             
             # Create gNB configuration
-            self.create_gnb_config(name, properties)
+            self.create_gnb_config(name, properties if isinstance(properties, dict) else {})
             
             config = self.ueransim_config["gnb"]
             
@@ -267,8 +267,8 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'gnb',
                     'COMPONENT_NAME': name,
-                    'TAC': str(properties.get('tac', 1)),
-                    'POWER': str(properties.get('power', 20))
+                    'TAC': str(properties.get('tac', 1)) if isinstance(properties, dict) else '1',
+                    'POWER': str(properties.get('power', 20)) if isinstance(properties, dict) else '20'
                 },
                 volumes=config.get("volumes", {})
             )
@@ -285,10 +285,10 @@ class EnhancedContainerManager:
         try:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
-            name = properties.get("name", f"ue_{comp_id}")
+            name = properties.get("name", f"ue_{comp_id}") if isinstance(properties, dict) else f"ue_{comp_id}"
             
             # Create UE configuration
-            self.create_ue_config(name, properties)
+            self.create_ue_config(name, properties if isinstance(properties, dict) else {})
             
             config = self.ueransim_config["ue"]
             
@@ -304,7 +304,7 @@ class EnhancedContainerManager:
                 environment={
                     'COMPONENT_TYPE': 'ue',
                     'COMPONENT_NAME': name,
-                    'IMSI': properties.get('imsi', '001010000000001')
+                    'IMSI': properties.get('imsi', '001010000000001') if isinstance(properties, dict) else '001010000000001'
                 },
                 volumes=config.get("volumes", {})
             )
@@ -666,3 +666,31 @@ logger:
                 containers.append((container.name, container))
                 
         return containers
+    
+    def open_terminal(self, container_name):
+        """Open terminal for container - compatibility method"""
+        return self.open_container_terminal(container_name)
+
+    def execute_command_in_container(self, container_name, command):
+        """Execute command in container and return success, output"""
+        try:
+            # Find container by name
+            container = None
+            for name, cont in self.get_all_containers():
+                if name == container_name or cont.name == container_name:
+                    container = cont
+                    break
+            
+            if not container:
+                return False, f"Container {container_name} not found"
+            
+            # Execute command
+            exec_result = container.exec_run(command, stdout=True, stderr=True)
+            output = exec_result.output.decode('utf-8')
+            success = exec_result.exit_code == 0
+            
+            return success, output
+            
+        except Exception as e:
+            print(f"Error executing command in container {container_name}: {e}")
+            return False, f"Error executing command: {e}"
