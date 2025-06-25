@@ -89,16 +89,16 @@ class ContainerManager:
             comp_id = getattr(component, 'component_id', id(component))            
             name = properties.get("name", f"{comp_type}_{comp_id}")              # Use Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'gradiant/open5gs:2.4.9',
-                'amf': 'gradiant/open5gs:2.4.9', 
-                'smf': 'gradiant/open5gs:2.4.9',
-                'upf': 'gradiant/open5gs:2.4.9',
-                'pcf': 'gradiant/open5gs:2.4.9',
-                'udm': 'gradiant/open5gs:2.4.9',
-                'ausf': 'gradiant/open5gs:2.4.9'
+                'nrf': 'openverso/open5gs:latest',
+                'amf': 'openverso/open5gs:latest', 
+                'smf': 'openverso/open5gs:latest',
+                'upf': 'openverso/open5gs:latest',
+                'pcf': 'openverso/open5gs:latest',
+                'udm': 'openverso/open5gs:latest',
+                'ausf': 'openverso/open5gs:latest'
             }
             
-            image = image_map.get(component.component_type, 'open5gs/open5gs-nrf')
+            image = image_map.get(component.component_type, 'openverso/open5gs:latest')
             
             # Get component-specific command and configuration
             command = self.get_open5gs_command(component.component_type)
@@ -139,7 +139,7 @@ class ContainerManager:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'towards5gs/ueransim:v3.2.6',
+                'openverso/ueransim:latest',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -173,7 +173,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'towards5gs/ueransim:v3.2.6',
+                'openverso/ueransim:latest',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,

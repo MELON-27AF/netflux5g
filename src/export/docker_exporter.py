@@ -31,7 +31,7 @@ class DockerExporter:
 
             # Set component-specific configuration
             if component.component_type == "amf":
-                service["image"] = "open5gs/open5gs-amf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"AMF_NAME={service_name}",
                     f"CAPACITY={component.properties.get('capacity', 100)}",
@@ -39,14 +39,14 @@ class DockerExporter:
                 ]
 
             elif component.component_type == "smf":
-                service["image"] = "open5gs/open5gs-smf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"SMF_NAME={service_name}",
                     f"UPF_SELECTION={component.properties.get('upf_selection', 'local')}"
                 ]
 
             elif component.component_type == "upf":
-                service["image"] = "open5gs/open5gs-upf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"UPF_NAME={service_name}",
                     f"CAPACITY={component.properties.get('capacity', 1000)}"
@@ -55,31 +55,31 @@ class DockerExporter:
                 service["privileged"] = True
 
             elif component.component_type == "pcf":
-                service["image"] = "open5gs/open5gs-pcf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"PCF_NAME={service_name}"
                 ]
 
             elif component.component_type == "udm":
-                service["image"] = "open5gs/open5gs-udm"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"UDM_NAME={service_name}"
                 ]
 
             elif component.component_type == "ausf":
-                service["image"] = "open5gs/open5gs-ausf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"AUSF_NAME={service_name}"
                 ]
 
             elif component.component_type == "nrf":
-                service["image"] = "open5gs/open5gs-nrf"
+                service["image"] = "openverso/open5gs:latest"
                 service["environment"] = [
                     f"NRF_NAME={service_name}"
                 ]
 
             elif component.component_type == "gnb":
-                service["image"] = "open5gs/ueransim-gnb"
+                service["image"] = "openverso/ueransim:latest"
                 service["environment"] = [
                     f"GNB_NAME={service_name}",
                     f"TAC={component.properties.get('tac', 1)}",
@@ -90,7 +90,7 @@ class DockerExporter:
                 service["privileged"] = True
 
             elif component.component_type == "ue":
-                service["image"] = "open5gs/ueransim-ue"
+                service["image"] = "openverso/ueransim:latest"
                 service["environment"] = [
                     f"UE_NAME={service_name}",
                     f"IMSI={component.properties.get('imsi', '001010000000001')}",

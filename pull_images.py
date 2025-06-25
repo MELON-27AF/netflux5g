@@ -10,11 +10,11 @@ import sys
 def pull_images():
     """Pull all required Docker images"""      # List of required images
     images = [
-        "gradiant/open5gs:2.4.9",   # Open5GS all-in-one image
-        "towards5gs/ueransim:v3.2.6", # UERANSIM gNB and UE
-        "mongo:4.4",                # MongoDB for Open5GS
-        "ubuntu:20.04",             # Base Ubuntu for custom containers
-        "alpine:latest"             # Lightweight base image
+        "openverso/open5gs:latest",   # Open5GS all-in-one image
+        "openverso/ueransim:latest",  # UERANSIM gNB and UE
+        "mongo:4.4",                  # MongoDB for Open5GS
+        "ubuntu:20.04",               # Base Ubuntu for custom containers
+        "alpine:latest"               # Lightweight base image
     ]
     
     try:
