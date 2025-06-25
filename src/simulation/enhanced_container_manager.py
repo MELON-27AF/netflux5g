@@ -47,7 +47,7 @@ class EnhancedContainerManager:
             "nrf": {
                 "image": "openverso/open5gs:latest",
                 "command": ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"],
-                "ports": {"7777": "7777"},
+                "ports": {},  # Remove port mapping - NRF communicates internally
                 "depends_on": ["mongodb"],
                 "volumes": {},
                 "mem_limit": "128m",
