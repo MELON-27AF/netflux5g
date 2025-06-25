@@ -146,6 +146,9 @@ class EnhancedContainerManager:
             print("Docker client not available. Please ensure Docker is installed and running.")
             return False, "Docker not available"
         
+        # Pre-pull required images
+        self.pull_required_images()
+        
         # Create network first
         network = self.create_5g_network()
         if not network:
@@ -163,7 +166,9 @@ class EnhancedContainerManager:
             container = None
             comp_type = component.component_type
             
-            if comp_type in ['amf', 'smf', 'upf', 'pcf', 'udm', 'ausf', 'nrf']:
+            if comp_type == 'mongodb':
+                container = self.deploy_mongodb_component(component)
+            elif comp_type in ['amf', 'smf', 'upf', 'pcf', 'udm', 'ausf', 'nrf']:
                 container = self.deploy_open5gs_component(component)
             elif comp_type == 'gnb':
                 container = self.deploy_gnb_component(component)
@@ -247,7 +252,8 @@ class EnhancedContainerManager:
                     **config.get("environment", {})
                 },
                 ports=ports_dict if ports_dict else None,
-                volumes=volumes_list if volumes_list else None
+                volumes=volumes_list if volumes_list else None,
+                restart_policy={"Name": "unless-stopped"}
             )
             
             print(f"Deployed Open5GS {comp_type}: {name}")
@@ -308,7 +314,8 @@ class EnhancedContainerManager:
                     'TAC': str(props_copy.get('tac', 1)),
                     'POWER': str(props_copy.get('power', 20))
                 },
-                volumes=volumes_list if volumes_list else None
+                volumes=volumes_list if volumes_list else None,
+                restart_policy={"Name": "unless-stopped"}
             )
             
             print(f"Deployed UERANSIM gNB: {name}")
@@ -368,7 +375,8 @@ class EnhancedContainerManager:
                     'COMPONENT_NAME': name,
                     'IMSI': props_copy.get('imsi', '001010000000001')
                 },
-                volumes=volumes_list if volumes_list else None
+                volumes=volumes_list if volumes_list else None,
+                restart_policy={"Name": "unless-stopped"}
             )
             
             print(f"Deployed UERANSIM UE: {name}")
@@ -378,6 +386,59 @@ class EnhancedContainerManager:
             print(f"Error deploying UE: {e}")
             return None
     
+    def deploy_mongodb_component(self, component):
+        """Deploy MongoDB component for Open5GS"""
+        try:
+            properties = getattr(component, 'properties', {})
+            comp_id = getattr(component, 'component_id', id(component))
+            
+            # Debug logging
+            print(f"DEBUG: Deploying mongodb, properties type: {type(properties)}, value: {properties}")
+            
+            # Ensure properties is a dictionary
+            if not isinstance(properties, dict):
+                print(f"WARNING: MongoDB properties was {type(properties)}, converting to dict")
+                properties = {}
+            
+            # Store a copy of properties to prevent accidental overwriting
+            props_copy = dict(properties)
+                
+            name = props_copy.get("name", f"mongodb_{comp_id}")
+            
+            config = self.open5gs_config["mongodb"]
+            
+            # Ensure config is a dictionary (defensive programming)
+            if not isinstance(config, dict):
+                print(f"MongoDB config is not a dictionary: {type(config)}")
+                config = {"image": "mongo:4.4"}
+            
+            # Prepare ports correctly for Docker
+            ports_config = config.get("ports", {})
+            ports_dict = {}
+            if ports_config:
+                for container_port, host_port in ports_config.items():
+                    if host_port:
+                        ports_dict[f"{container_port}"] = host_port
+            
+            container = self.client.containers.run(
+                config.get("image", "mongo:4.4"),
+                command=config.get("command", None),
+                name=name,
+                network=self.network_name,
+                detach=True,
+                remove=False,
+                environment=config.get("environment", {}),
+                ports=ports_dict if ports_dict else None,
+                restart_policy={"Name": "unless-stopped"}
+            )
+            
+            print(f"Deployed MongoDB: {name}")
+            return container
+            
+        except Exception as e:
+            print(f"Error deploying MongoDB: {e}")
+            return None
+
     def create_open5gs_config(self, comp_type, name, properties=None):
         """Create Open5GS configuration files"""
         try:
@@ -756,3 +817,23 @@ logger:
         except Exception as e:
             print(f"Error executing command in container {container_name}: {e}")
             return False, f"Error executing command: {e}"
+    
+    def pull_required_images(self):
+        """Pre-pull all required Docker images to avoid timeout during deployment"""
+        required_images = [
+            "mongo:4.4",
+            "openverso/open5gs:latest", 
+            "openverso/ueransim:latest"
+        ]
+        
+        print("Pre-pulling required Docker images...")
+        for image in required_images:
+            try:
+                print(f"Pulling {image}...")
+                self.client.images.pull(image)
+                print(f"✅ Successfully pulled {image}")
+            except Exception as e:
+                print(f"⚠️ Warning: Failed to pull {image}: {e}")
+                # Continue anyway - Docker will try to pull during container creation
+        
+        print("Image pre-pull completed.")
