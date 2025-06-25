@@ -109,7 +109,7 @@ class EnhancedContainerManager:
         self.ueransim_config = {
             "gnb": {
                 "image": "towards5gs/ueransim-gnb:v3.2.3",
-                "command": ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
+                "command": ["/ueransim/bin/nr-gnb", "-c", "/etc/ueransim/gnb.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
@@ -118,7 +118,7 @@ class EnhancedContainerManager:
             },
             "ue": {
                 "image": "towards5gs/ueransim-ue:v3.2.3",
-                "command": ["nr-ue", "-c", "/etc/ueransim/ue.yaml"],
+                "command": ["/ueransim/bin/nr-ue", "-c", "/etc/ueransim/ue.yaml"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
@@ -838,6 +838,10 @@ logger:
             
         except Exception as e:
             print(f"Error during cleanup: {e}")
+    
+    def cleanup_containers(self):
+        """Alias for cleanup method to maintain compatibility"""
+        self.cleanup()
     
     def get_all_containers(self):
         """Get all deployed containers as name, container pairs"""
