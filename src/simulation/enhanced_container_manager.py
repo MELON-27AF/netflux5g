@@ -145,17 +145,33 @@ class EnhancedContainerManager:
         if not self.client:
             print("Docker client not available. Please ensure Docker is installed and running.")
             return False, "Docker not available"
-        
-        # Pre-pull required images
-        self.pull_required_images()
-        
+
+        print("Checking Docker connection...")
+        try:
+            # Test Docker connection
+            self.client.ping()
+            print("✅ Docker is running and accessible")
+        except Exception as e:
+            print(f"❌ Docker connection failed: {e}")
+            return False, f"Docker connection failed: {e}"
+
+        # Pre-pull required images with better error handling
+        print("Preparing Docker images...")
+        try:
+            if not self.pull_required_images():
+                print("⚠️ Image pulling was interrupted")
+                return False, "Image pulling was interrupted by user"
+        except Exception as e:
+            print(f"⚠️ Error during image pulling: {e}")
+            print("Continuing with deployment - Docker will attempt to pull images as needed...")
+
         # Create network first
         network = self.create_5g_network()
         if not network:
             return False, "Failed to create network"
-        
+
         deployed = []
-        
+
         # Sort components by deployment order (mongodb, nrf, then others)
         deployment_order = ['mongodb', 'nrf', 'amf', 'smf', 'upf', 'ausf', 'udm', 'pcf', 'gnb', 'ue']
         sorted_components = sorted(components, key=lambda c: 
@@ -827,13 +843,47 @@ logger:
         ]
         
         print("Pre-pulling required Docker images...")
+        
+        # First check which images already exist locally
         for image in required_images:
             try:
-                print(f"Pulling {image}...")
-                self.client.images.pull(image)
+                # Check if image already exists locally
+                try:
+                    self.client.images.get(image)
+                    print(f"✅ {image} already exists locally")
+                    continue
+                except:
+                    pass  # Image doesn't exist, need to pull it
+                
+                print(f"Pulling {image}... (this may take several minutes)")
+                
+                # Pull with streaming to show progress
+                response = self.client.api.pull(image, stream=True, decode=True)
+                layers_downloaded = set()
+                
+                for line in response:
+                    if 'status' in line:
+                        status = line['status']
+                        layer_id = line.get('id', '')
+                        
+                        if status == 'Downloading' and layer_id:
+                            if layer_id not in layers_downloaded:
+                                print(f"  📥 Downloading layer {layer_id[:12]}")
+                                layers_downloaded.add(layer_id)
+                        elif status == 'Pull complete' and layer_id:
+                            print(f"  ✅ Layer {layer_id[:12]} complete")
+                        elif 'downloaded' in status.lower():
+                            print(f"  📦 {status}")
+                
                 print(f"✅ Successfully pulled {image}")
+                
+            except KeyboardInterrupt:
+                print(f"\n⚠️ Image pulling interrupted by user")
+                return False
             except Exception as e:
                 print(f"⚠️ Warning: Failed to pull {image}: {e}")
+                print(f"   💡 Tip: You can manually pull this image with: docker pull {image}")
                 # Continue anyway - Docker will try to pull during container creation
         
         print("Image pre-pull completed.")
+        return True
