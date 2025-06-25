@@ -11,7 +11,7 @@ services:
       - netflux5g_network
 
   nrf:
-    image: gradiant/open5gs:2.7.5
+    image: open5gs/open5gs-nrf
     container_name: netflux5g_nrf
     command: ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"]
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
       - netflux5g_network
 
   amf:
-    image: gradiant/open5gs:2.7.5
+    image: open5gs/open5gs-amf
     container_name: netflux5g_amf
     command: ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"]
     restart: unless-stopped
@@ -39,7 +39,7 @@ services:
       - netflux5g_network
 
   smf:
-    image: gradiant/open5gs:2.7.5
+    image: open5gs/open5gs-smf
     container_name: netflux5g_smf
     command: ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"]
     restart: unless-stopped
@@ -51,7 +51,7 @@ services:
       - netflux5g_network
 
   upf:
-    image: gradiant/open5gs:2.7.5
+    image: open5gs/open5gs-upf
     container_name: netflux5g_upf
     command: ["open5gs-upfd", "-c", "/etc/open5gs/upf.yaml"]
     restart: unless-stopped
@@ -67,7 +67,7 @@ services:
       - netflux5g_network
 
   gnb:
-    image: gradiant/ueransim:3.2.7
+    image: open5gs/ueransim-gnb
     container_name: netflux5g_gnb
     command: ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"]
     restart: unless-stopped
@@ -82,7 +82,7 @@ services:
       - netflux5g_network
 
   ue:
-    image: gradiant/ueransim:3.2.7
+    image: open5gs/ueransim-ue
     container_name: netflux5g_ue
     command: ["nr-ue", "-c", "/etc/ueransim/ue.yaml"]
     restart: unless-stopped

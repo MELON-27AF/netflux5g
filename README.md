@@ -7,8 +7,8 @@ NetFlux5G adalah tools simulasi jaringan 5G yang berjalan menggunakan container 
 - **Desain Topologi Visual**: Drag-and-drop interface untuk membuat topologi jaringan 5G
 - **Container-Based Simulation**: Menggunakan Docker container untuk menjalankan komponen 5G nyata
 - **Real-time Terminal Access**: Akses terminal langsung ke setiap container yang berjalan
-- **5G Core Components**: Support untuk Open5GS (AMF, SMF, UPF, NRF, dll.)
-- **RAN Simulation**: UERANSIM untuk gNodeB dan UE simulation
+- **5G Core Components**: Support untuk Open5GS (AMF, SMF, UPF, NRF, dll.) menggunakan open5gs/open5gs-* images
+- **RAN Simulation**: UERANSIM untuk gNodeB dan UE simulation menggunakan open5gs/ueransim-* images
 - **Network Testing**: Built-in connectivity testing dan monitoring
 - **Export Capabilities**: Export ke Docker Compose dan Mininet
 

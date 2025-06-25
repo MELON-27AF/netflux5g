@@ -10,8 +10,15 @@ import sys
 def pull_images():
     """Pull all required Docker images"""      # List of required images
     images = [
-        "gradiant/open5gs:2.7.5",   # Open5GS 5G Core components
-        "gradiant/ueransim:3.2.7",  # UERANSIM gNB and UE components
+        "open5gs/open5gs-nrf",      # NRF (Network Repository Function)
+        "open5gs/open5gs-amf",      # AMF (Access and Mobility Management Function)
+        "open5gs/open5gs-smf",      # SMF (Session Management Function)
+        "open5gs/open5gs-upf",      # UPF (User Plane Function)
+        "open5gs/open5gs-pcf",      # PCF (Policy Control Function)
+        "open5gs/open5gs-udm",      # UDM (Unified Data Management)
+        "open5gs/open5gs-ausf",     # AUSF (Authentication Server Function)
+        "open5gs/ueransim-gnb",     # UERANSIM gNB
+        "open5gs/ueransim-ue",      # UERANSIM UE
         "mongo:4.4"                 # MongoDB for Open5GS
     ]
     

@@ -87,18 +87,18 @@ class ContainerManager:
             properties = getattr(component, 'properties', {})
             comp_type = getattr(component, 'component_type', 'unknown')
             comp_id = getattr(component, 'component_id', id(component))            
-            name = properties.get("name", f"{comp_type}_{comp_id}")              # Use Gradiant Open5GS Docker images for 5G core components
+            name = properties.get("name", f"{comp_type}_{comp_id}")              # Use Open5GS Docker images for 5G core components
             image_map = {
-                'nrf': 'gradiant/open5gs:2.7.5',
-                'amf': 'gradiant/open5gs:2.7.5', 
-                'smf': 'gradiant/open5gs:2.7.5',
-                'upf': 'gradiant/open5gs:2.7.5',
-                'pcf': 'gradiant/open5gs:2.7.5',
-                'udm': 'gradiant/open5gs:2.7.5',
-                'ausf': 'gradiant/open5gs:2.7.5'
+                'nrf': 'open5gs/open5gs-nrf',
+                'amf': 'open5gs/open5gs-amf', 
+                'smf': 'open5gs/open5gs-smf',
+                'upf': 'open5gs/open5gs-upf',
+                'pcf': 'open5gs/open5gs-pcf',
+                'udm': 'open5gs/open5gs-udm',
+                'ausf': 'open5gs/open5gs-ausf'
             }
             
-            image = image_map.get(component.component_type, 'gradiant/open5gs:2.7.5')
+            image = image_map.get(component.component_type, 'open5gs/open5gs-nrf')
             
             # Get component-specific command and configuration
             command = self.get_open5gs_command(component.component_type)
@@ -139,7 +139,7 @@ class ContainerManager:
             name = component.properties.get("name", f"gnb_{component.component_id}")
             
             container = self.client.containers.run(
-                'gradiant/ueransim:3.2.7',
+                'open5gs/ueransim-gnb',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
@@ -156,7 +156,8 @@ class ContainerManager:
                     'PLMN_ID': f"{component.properties.get('mcc', '001')}{component.properties.get('mnc', '01')}",
                     'AMF_IP': component.properties.get('amf_ip', '172.17.0.1'),
                     'GNB_ID': str(component.properties.get('gnb_id', 1))
-                }            )
+                }
+            )
             
             self.setup_container_networking(container)
             print(f"Deployed gNB: {name}")
@@ -172,7 +173,7 @@ class ContainerManager:
             name = component.properties.get("name", f"ue_{component.component_id}")
             
             container = self.client.containers.run(
-                'gradiant/ueransim:3.2.7',
+                'open5gs/ueransim-ue',
                 command="sleep infinity",  # Will be configured later
                 name=name,
                 network=self.network_name,
