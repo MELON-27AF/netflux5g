@@ -1,7 +1,8 @@
 from PyQt5.QtCore import QPointF
 from models.component_factory import ComponentFactory
 from utils import calculate_latency, calculate_throughput, calculate_resource_utilization
-from .container_manager import ContainerManager
+from .enhanced_container_manager import EnhancedContainerManager
+from gui.terminal_dialog import TerminalDialog
 import logging
 import traceback
 
@@ -10,7 +11,8 @@ class NetworkSimulator:
         try:
             self.canvas = canvas
             self.component_factory = ComponentFactory()
-            self.container_manager = ContainerManager()
+            self.container_manager = EnhancedContainerManager()
+            self.terminal_dialog = None
             logging.info("NetworkSimulator initialized")
         except Exception as e:
             logging.error(f"Error initializing NetworkSimulator: {e}")
@@ -158,8 +160,7 @@ class NetworkSimulator:
                         }
                         
                     elif comp_type in ["gnb", "ue"] or "ran" in comp_type.lower() or "antenna" in comp_type.lower():
-                        # RAN components
-                        if comp_type == "gnb":
+                        # RAN components                        if comp_type == "gnb":
                             # gNB specific metrics
                             power = component.properties.get("power", 20) if hasattr(component, 'properties') else 20
                             connected_ues = sum(1 for c in connections if (c.source == component and getattr(c.target, 'component_type', '') == "ue") or 
@@ -180,7 +181,7 @@ class NetworkSimulator:
                             signal_strength = -70
                             if connected_gnb:
                                 # Calculate signal strength based on "distance" (simplified)
-                                gnb = c.source if getattr(c.source, 'component_type', '') == "gnb" else c.target
+                                gnb = connected_gnb.source if getattr(connected_gnb.source, 'component_type', '') == "gnb" else connected_gnb.target
                                 power = gnb.properties.get("power", 20) if hasattr(gnb, 'properties') else 20
                                 # A very simplified signal strength calculation
                                 signal_strength = -70 + (power / 2)
@@ -216,16 +217,59 @@ class NetworkSimulator:
     def stop_simulation(self):
         """Stop the simulation and cleanup containers"""
         try:
-            print("Stopping simulation and cleaning up containers...")
-            self.container_manager.cleanup()
+            logging.info("Stopping simulation...")
+            
+            if self.container_manager:
+                self.container_manager.cleanup_containers()
+                
+            # Close terminal dialog if open
+            if self.terminal_dialog:
+                self.terminal_dialog.close()
+                self.terminal_dialog = None
+                
+            logging.info("Simulation stopped successfully")
             return True
+            
         except Exception as e:
-            print(f"Error stopping simulation: {e}")
+            logging.error(f"Error stopping simulation: {e}")
             return False
     
     def open_container_terminal(self, container_name):
-        """Open terminal to specific container"""
-        self.container_manager.open_terminal_to_container(container_name)
+        """Open terminal to specific container - similar to MiniEdit functionality"""
+        try:
+            logging.info(f"Opening terminal to container: {container_name}")
+            
+            if not self.container_manager:
+                logging.error("Container manager not available")
+                return False
+                
+            # Open terminal dialog if not already open
+            if not self.terminal_dialog:
+                self.terminal_dialog = TerminalDialog(self.container_manager)
+                
+            self.terminal_dialog.show()
+            self.terminal_dialog.raise_()
+            self.terminal_dialog.activateWindow()
+            
+            # Request terminal access to specific container
+            return self.container_manager.open_terminal(container_name)
+            
+        except Exception as e:
+            logging.error(f"Error opening container terminal: {e}")
+            return False
+    
+    def show_terminal_dialog(self):
+        """Show the terminal dialog for container management"""
+        try:
+            if not self.terminal_dialog:
+                self.terminal_dialog = TerminalDialog(self.container_manager)
+            
+            self.terminal_dialog.show()
+            self.terminal_dialog.raise_()
+            self.terminal_dialog.activateWindow()
+            
+        except Exception as e:
+            logging.error(f"Error showing terminal dialog: {e}")
 
     def load_template(self, template_name):
         """Load a predefined network topology template"""

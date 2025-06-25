@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:4.4
+    container_name: netflux5g_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    networks:
+      - netflux5g_network
+
+  nrf:
+    image: gradiant/open5gs:2.7.5
+    container_name: netflux5g_nrf
+    command: ["open5gs-nrfd", "-c", "/etc/open5gs/nrf.yaml"]
+    restart: unless-stopped
+    ports:
+      - "7777:7777"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./config/open5gs:/etc/open5gs
+    networks:
+      - netflux5g_network
+
+  amf:
+    image: gradiant/open5gs:2.7.5
+    container_name: netflux5g_amf
+    command: ["open5gs-amfd", "-c", "/etc/open5gs/amf.yaml"]
+    restart: unless-stopped
+    ports:
+      - "38412:38412"
+    depends_on:
+      - nrf
+    volumes:
+      - ./config/open5gs:/etc/open5gs
+    networks:
+      - netflux5g_network
+
+  smf:
+    image: gradiant/open5gs:2.7.5
+    container_name: netflux5g_smf
+    command: ["open5gs-smfd", "-c", "/etc/open5gs/smf.yaml"]
+    restart: unless-stopped
+    depends_on:
+      - nrf
+    volumes:
+      - ./config/open5gs:/etc/open5gs
+    networks:
+      - netflux5g_network
+
+  upf:
+    image: gradiant/open5gs:2.7.5
+    container_name: netflux5g_upf
+    command: ["open5gs-upfd", "-c", "/etc/open5gs/upf.yaml"]
+    restart: unless-stopped
+    ports:
+      - "8805:8805"
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - smf
+    volumes:
+      - ./config/open5gs:/etc/open5gs
+    networks:
+      - netflux5g_network
+
+  gnb:
+    image: gradiant/ueransim:3.2.7
+    container_name: netflux5g_gnb
+    command: ["nr-gnb", "-c", "/etc/ueransim/gnb.yaml"]
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    depends_on:
+      - amf
+    volumes:
+      - ./config/ueransim:/etc/ueransim
+    networks:
+      - netflux5g_network
+
+  ue:
+    image: gradiant/ueransim:3.2.7
+    container_name: netflux5g_ue
+    command: ["nr-ue", "-c", "/etc/ueransim/ue.yaml"]
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    depends_on:
+      - gnb
+    volumes:
+      - ./config/ueransim:/etc/ueransim
+    networks:
+      - netflux5g_network
+
+networks:
+  netflux5g_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.45.0.0/16

@@ -95,9 +95,7 @@ class MainWindow(QMainWindow):
 
         self.exit_action = QAction("E&xit", self)
         self.exit_action.setShortcut("Ctrl+Q")
-        self.exit_action.triggered.connect(self.close)
-
-        # Simulation actions
+        self.exit_action.triggered.connect(self.close)        # Simulation actions
         self.simulate_action = QAction("Run &Simulation", self)
         self.simulate_action.setShortcut("F5")
         self.simulate_action.triggered.connect(self.run_simulation)
@@ -105,6 +103,11 @@ class MainWindow(QMainWindow):
         self.stop_simulation_action = QAction("Stop Simulation", self)
         self.stop_simulation_action.triggered.connect(self.stop_simulation)
         self.stop_simulation_action.setEnabled(False)
+        
+        self.show_terminal_action = QAction("Open Container Terminals", self)
+        self.show_terminal_action.setShortcut("Ctrl+T")
+        self.show_terminal_action.triggered.connect(self.show_container_terminals)
+        self.show_terminal_action.setEnabled(False)
         
         # Template actions
         self.load_5g_core_template = QAction("5G Core Test", self)
@@ -140,19 +143,18 @@ class MainWindow(QMainWindow):
         self.templates_menu.addAction(self.load_full_5g_template)
 
         self.file_menu.addSeparator()
-        self.file_menu.addAction(self.exit_action)
-
-        # Simulation menu
+        self.file_menu.addAction(self.exit_action)        # Simulation menu
         self.simulation_menu = self.menuBar().addMenu("&Simulation")
         self.simulation_menu.addAction(self.simulate_action)
         self.simulation_menu.addAction(self.stop_simulation_action)
+        self.simulation_menu.addSeparator()
+        self.simulation_menu.addAction(self.show_terminal_action)
 
         # Help menu
         self.help_menu = self.menuBar().addMenu("&Help")
         self.help_menu.addAction(self.about_action)
 
-    def create_toolbars(self):
-        # Main toolbar
+    def create_toolbars(self):        # Main toolbar
         self.main_toolbar = self.addToolBar("Main")
         self.main_toolbar.addAction(self.new_action)
         self.main_toolbar.addAction(self.open_action)
@@ -160,6 +162,7 @@ class MainWindow(QMainWindow):
         self.main_toolbar.addSeparator()
         self.main_toolbar.addAction(self.simulate_action)
         self.main_toolbar.addAction(self.stop_simulation_action)
+        self.main_toolbar.addAction(self.show_terminal_action)
         
         # Templates toolbar
         self.template_toolbar = TemplateToolBar(self)
@@ -258,8 +261,7 @@ class MainWindow(QMainWindow):
         try:
             logging.info("Starting simulation...")
             
-            # Check if simulation is already running
-            if self.current_simulator:
+            # Check if simulation is already running            if self.current_simulator:
                 reply = QMessageBox.question(
                     self, "Simulation Running",
                     "A simulation is already running. Stop it and start a new one?",
@@ -273,19 +275,24 @@ class MainWindow(QMainWindow):
             self.current_simulator = NetworkSimulator(self.canvas)
             
             # Update UI
-            self.simulate_action.setEnabled(False)
-            self.stop_simulation_action.setEnabled(True)
+            self.update_ui_for_simulation_state(running=True)
             self.statusBar().showMessage("Starting 5G network simulation with containers...")
             
             result, simulation_data = self.current_simulator.run()
             
             if result:
                 self.statusBar().showMessage("Simulation running with containers deployed", 5000)
+                
+                # Show terminal dialog automatically after successful deployment
+                try:
+                    self.current_simulator.show_terminal_dialog()
+                except Exception as e:
+                    logging.warning(f"Could not open terminal dialog: {e}")
+                
                 self.show_simulation_results(simulation_data)
             else:
                 self.statusBar().showMessage("Simulation failed", 3000)
-                self.simulate_action.setEnabled(True)
-                self.stop_simulation_action.setEnabled(False)
+                self.update_ui_for_simulation_state(running=False)
                 self.current_simulator = None
                 
                 error_msg = simulation_data.get('error', 'Unknown error')
@@ -296,8 +303,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logging.error(f"Exception in run_simulation: {e}")
             logging.error(traceback.format_exc())
-            self.simulate_action.setEnabled(True)
-            self.stop_simulation_action.setEnabled(False)
+            self.update_ui_for_simulation_state(running=False)
             self.current_simulator = None
             QMessageBox.critical(self, "Simulation Error", f"Failed to run simulation: {str(e)}")
 
@@ -306,16 +312,14 @@ class MainWindow(QMainWindow):
         if self.current_simulator:
             try:
                 result = self.current_simulator.stop_simulation()
-                if result:
-                    self.statusBar().showMessage("Simulation stopped and containers cleaned up", 3000)
+                if result:                    self.statusBar().showMessage("Simulation stopped and containers cleaned up", 3000)
                 else:
                     self.statusBar().showMessage("Error stopping simulation", 3000)
             except Exception as e:
                 QMessageBox.warning(self, "Stop Simulation", f"Error stopping simulation: {str(e)}")
             finally:
                 self.current_simulator = None
-                self.simulate_action.setEnabled(True)
-                self.stop_simulation_action.setEnabled(False)
+                self.update_ui_for_simulation_state(running=False)
 
     def show_simulation_results(self, simulation_data):
         """Display simulation results in a new window"""
@@ -474,6 +478,23 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logging.error(f"Error opening container terminal: {e}")
             QMessageBox.warning(self, "Terminal Error", f"Failed to open terminal: {str(e)}")
+
+    def show_container_terminals(self):
+        """Show the container terminals dialog"""
+        if self.current_simulator:
+            try:
+                self.current_simulator.show_terminal_dialog()
+            except Exception as e:
+                QMessageBox.warning(self, "Terminal Error", f"Failed to open terminal dialog: {str(e)}")
+        else:
+            QMessageBox.information(self, "No Simulation", 
+                                  "Please run a simulation first to access container terminals.")
+
+    def update_ui_for_simulation_state(self, running=False):
+        """Update UI elements based on simulation state"""
+        self.simulate_action.setEnabled(not running)
+        self.stop_simulation_action.setEnabled(running)
+        self.show_terminal_action.setEnabled(running)
 
     def show_about(self):
         QMessageBox.about(self, "About NetFlux5G",

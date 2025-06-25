@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QListWidget,
                             QPushButton, QTextEdit, QLineEdit, QLabel, 
                             QSplitter, QGroupBox, QListWidgetItem, QWidget)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt5.QtGui import QFont, QTextCursor
+from PyQt5.QtGui import QFont, QTextCursor, QColor
 import subprocess
 import threading
 import time
@@ -130,8 +130,7 @@ class TerminalDialog(QDialog):
         
         layout.addWidget(splitter)
         self.setLayout(layout)
-        
-    def refresh_containers(self):
+          def refresh_containers(self):
         """Refresh the container list"""
         self.container_list.clear()
         
@@ -144,9 +143,186 @@ class TerminalDialog(QDialog):
                     status = container.status
                     
                     # Get container IP
-                    networks = container.attrs['NetworkSettings']['Networks']
-                    network_name = self.container_manager.network_name
-                    ip = networks.get(network_name, {}).get('IPAddress', 'N/A')
+                    ip = self.container_manager.get_container_ip(container)
+                    
+                    item_text = f"{name} ({status}) - {ip}"
+                    item = QListWidgetItem(item_text)
+                    item.setData(Qt.UserRole, name)
+                    
+                    # Color code by status
+                    if status == "running":
+                        item.setForeground(QColor("green"))
+                    elif status == "exited":
+                        item.setForeground(QColor("red"))
+                    else:
+                        item.setForeground(QColor("orange"))
+                    
+                    self.container_list.addItem(item)
+                    
+                except Exception as e:
+                    item_text = f"{name} (error: {str(e)})"
+                    item = QListWidgetItem(item_text)
+                    item.setData(Qt.UserRole, name)
+                    item.setForeground(QColor("red"))
+                    self.container_list.addItem(item)
+                    
+        except Exception as e:
+            self.output_text.append(f"Error refreshing containers: {e}")
+    
+    def open_selected_terminal(self):
+        """Open terminal for selected container"""
+        current_item = self.container_list.currentItem()
+        if current_item:
+            container_name = current_item.data(Qt.UserRole)
+            self.open_container_terminal(container_name)
+    
+    def open_container_terminal(self, item):
+        """Open terminal to specific container"""
+        if isinstance(item, QListWidgetItem):
+            container_name = item.data(Qt.UserRole)
+        else:
+            container_name = str(item)
+            
+        try:
+            success = self.container_manager.open_terminal(container_name)
+            if success:
+                self.output_text.append(f"✅ Opened terminal for {container_name}")
+            else:
+                self.output_text.append(f"❌ Failed to open terminal for {container_name}")
+        except Exception as e:
+            self.output_text.append(f"❌ Error opening terminal for {container_name}: {e}")
+    
+    def execute_command(self):
+        """Execute command in selected container"""
+        current_item = self.container_list.currentItem()
+        if not current_item:
+            self.output_text.append("❌ Please select a container first")
+            return
+            
+        container_name = current_item.data(Qt.UserRole)
+        command = self.cmd_input.text().strip()
+        
+        if not command:
+            self.output_text.append("❌ Please enter a command")
+            return
+            
+        try:
+            self.output_text.append(f"🔧 Executing in {container_name}: {command}")
+            success, output = self.container_manager.execute_command_in_container(container_name, command)
+            
+            if success:
+                self.output_text.append(f"✅ Command successful:")
+                self.output_text.append(output)
+            else:
+                self.output_text.append(f"❌ Command failed:")
+                self.output_text.append(output)
+                
+            self.cmd_input.clear()
+            
+        except Exception as e:
+            self.output_text.append(f"❌ Error executing command: {e}")
+    
+    def ping_test(self):
+        """Test ping between selected container and others"""
+        current_item = self.container_list.currentItem()
+        if not current_item:
+            self.output_text.append("❌ Please select a container first")
+            return
+            
+        container_name = current_item.data(Qt.UserRole)
+        self.output_text.append(f"🏓 Starting ping test from {container_name}...")
+        
+        try:
+            # Get all other containers to ping
+            containers = self.container_manager.get_all_containers()
+            
+            for name, container in containers:
+                if name != container_name:
+                    ip = self.container_manager.get_container_ip(container)
+                    if ip != "unknown":
+                        success, output = self.container_manager.execute_command_in_container(
+                            container_name, f"ping -c 1 {ip}"
+                        )
+                        
+                        if success:
+                            self.output_text.append(f"✅ {container_name} → {name} ({ip}): OK")
+                        else:
+                            self.output_text.append(f"❌ {container_name} → {name} ({ip}): FAILED")
+                            
+        except Exception as e:
+            self.output_text.append(f"❌ Ping test error: {e}")
+    
+    def ping_all_containers(self):
+        """Ping test between all containers"""
+        self.output_text.append("🏓 Starting comprehensive ping test...")
+        
+        try:
+            results = self.container_manager.test_connectivity()
+            
+            success_count = 0
+            total_count = len(results)
+            
+            for result in results:
+                if result['success']:
+                    self.output_text.append(
+                        f"✅ {result['source']} → {result['target']}: OK"
+                    )
+                    success_count += 1
+                else:
+                    self.output_text.append(
+                        f"❌ {result['source']} → {result['target']}: {result['error']}"
+                    )
+            
+            self.output_text.append(f"📊 Ping test complete: {success_count}/{total_count} successful")
+            
+        except Exception as e:
+            self.output_text.append(f"❌ Comprehensive ping test error: {e}")
+    
+    def show_routes(self):
+        """Show IP routes for selected container"""
+        current_item = self.container_list.currentItem()
+        if not current_item:
+            self.output_text.append("❌ Please select a container first")
+            return
+            
+        container_name = current_item.data(Qt.UserRole)
+        self.output_text.append(f"📡 IP routes for {container_name}:")
+        
+        try:
+            success, output = self.container_manager.execute_command_in_container(
+                container_name, "ip route"
+            )
+            
+            if success:
+                self.output_text.append(output)
+            else:
+                self.output_text.append(f"❌ Failed to get routes: {output}")
+                
+        except Exception as e:
+            self.output_text.append(f"❌ Error getting routes: {e}")
+    
+    def show_interfaces(self):
+        """Show network interfaces for selected container"""
+        current_item = self.container_list.currentItem()
+        if not current_item:
+            self.output_text.append("❌ Please select a container first")
+            return
+            
+        container_name = current_item.data(Qt.UserRole)
+        self.output_text.append(f"🔌 Network interfaces for {container_name}:")
+        
+        try:
+            success, output = self.container_manager.execute_command_in_container(
+                container_name, "ip addr"
+            )
+            
+            if success:
+                self.output_text.append(output)
+            else:
+                self.output_text.append(f"❌ Failed to get interfaces: {output}")
+                
+        except Exception as e:
+            self.output_text.append(f"❌ Error getting interfaces: {e}")
                     
                     # Create list item with status info
                     item_text = f"{name} ({status}) - {ip}"

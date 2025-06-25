@@ -300,21 +300,221 @@ class EnhancedContainerManager:
             print(f"Error deploying UE: {e}")
             return None
     
-    def create_open5gs_config(self, component_type, name, properties):
+    def create_open5gs_config(self, comp_type, name, properties=None):
         """Create Open5GS configuration files"""
-        # This would create proper YAML configuration files for Open5GS
-        # For now, we'll use default configurations
-        pass
+        try:
+            import os
+            
+            config_dir = f"./config/open5gs/{name}"
+            os.makedirs(config_dir, exist_ok=True)
+            
+            # Base configuration templates
+            if comp_type == "nrf":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+nrf:
+    sbi:
+        addr: 0.0.0.0
+        port: 7777
+"""
+            elif comp_type == "amf":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+amf:
+    sbi:
+        addr: 0.0.0.0
+        port: 80
+    ngap:
+        addr: 0.0.0.0
+        port: 38412
+    guami:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          amf_id:
+            region: 2
+            set: 1
+    tai:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          tac: 1
+    plmn_support:
+        - plmn_id:
+            mcc: 999
+            mnc: 70
+          s_nssai:
+            - sst: 1
+
+nrf:
+    sbi:
+        addr: nrf
+        port: 7777
+"""
+            # Add more configurations for other components...
+            else:
+                config_content = f"# Configuration for {comp_type}"
+            
+            config_file = os.path.join(config_dir, f"{comp_type}.yaml")
+            with open(config_file, 'w') as f:
+                f.write(config_content)
+                
+            print(f"Created config file: {config_file}")
+            return config_file
+            
+        except Exception as e:
+            print(f"Error creating config for {comp_type}: {e}")
+            return None
     
-    def create_gnb_config(self, name, properties):
-        """Create gNB configuration file for UERANSIM"""
-        # This would create proper YAML configuration for gNB
-        pass
+    def create_gnb_config(self, name, properties=None):
+        """Create UERANSIM gNB configuration"""
+        try:
+            import os
+            
+            config_dir = f"./config/ueransim/{name}"
+            os.makedirs(config_dir, exist_ok=True)
+            
+            mcc = properties.get("mcc", "999") if properties else "999"
+            mnc = properties.get("mnc", "70") if properties else "70"
+            nci = properties.get("nci", "0x000000010") if properties else "0x000000010"
+            
+            config_content = f"""
+mcc: '{mcc}'
+mnc: '{mnc}'
+nci: {nci}
+idLength: 32
+tac: 1
+linkIp: 127.0.0.1
+ngapIp: 127.0.0.1
+gtpIp: 127.0.0.1
+
+amfConfigs:
+  - address: amf
+    port: 38412
+
+slices:
+  - sst: 1
+
+logger:
+  level: warn
+"""
+            
+            config_file = os.path.join(config_dir, "gnb.yaml")
+            with open(config_file, 'w') as f:
+                f.write(config_content)
+                
+            print(f"Created gNB config: {config_file}")
+            return config_file
+            
+        except Exception as e:
+            print(f"Error creating gNB config: {e}")
+            return None
     
-    def create_ue_config(self, name, properties):
-        """Create UE configuration file for UERANSIM"""
-        # This would create proper YAML configuration for UE
-        pass
+    def create_ue_config(self, name, properties=None):
+        """Create UERANSIM UE configuration"""
+        try:
+            import os
+            
+            config_dir = f"./config/ueransim/{name}"
+            os.makedirs(config_dir, exist_ok=True)
+            
+            imsi = properties.get("imsi", "001010000000001") if properties else "001010000000001"
+            key = properties.get("key", "465B5CE8B199B49FAA5F0A2EE238A6BC") if properties else "465B5CE8B199B49FAA5F0A2EE238A6BC"
+            
+            config_content = f"""
+# IMSI number of the UE. IMSI = [MCC|MNC|MSISDN] (In total 15 digits)
+supi: 'imsi-{imsi}'
+mcc: '999'
+mnc: '70'
+routingIndicator: '0000'
+
+# Permanent subscription key
+key: '{key}'
+# Operator code (OP or OPC) of the UE
+op: 'E8ED289DEBA952E4283B54E88E6183CA'
+# This value specifies the OP type and it can be either 'OP' or 'OPC'
+opType: 'OPC'
+
+# Authentication Management Field (AMF) value
+amf: '8000'
+# IMEI number of the device. It is used if no SUPI is provided
+imei: '356938035643803'
+# IMEISV number of the device. It is used if no SUPI and IMEI is provided
+imeiSv: '4370816125816151'
+
+# List of gNB IP addresses for Radio Link Simulation
+gnbSearchList:
+  - 127.0.0.1
+
+# UAC Access Identities Configuration
+uacAic:
+  mps: false
+  mcs: false
+
+# UAC Access Control Class
+uacAcc:
+  normalClass: 0
+  class11: false
+  class12: false
+  class13: false
+  class14: false
+  class15: false
+
+# Initial PDU sessions to be established
+sessions:
+  - type: 'IPv4'
+    apn: 'internet'
+    slice:
+      sst: 1
+
+# Configured NSSAI for this UE by HPLMN
+configured-nssai:
+  - sst: 1
+
+# Default Configured NSSAI for this UE
+default-nssai:
+  - sst: 1
+    sd: 1
+
+# Supported integrity algorithms by this UE
+integrity:
+  IA1: true
+  IA2: true
+  IA3: true
+
+# Supported encryption algorithms by this UE
+ciphering:
+  EA1: true
+  EA2: true
+  EA3: true
+
+# Integrity protection maximum data rate for user plane
+integrityMaxRate:
+  uplink: 'full'
+  downlink: 'full'
+
+logger:
+  level: warn
+"""
+            
+            config_file = os.path.join(config_dir, "ue.yaml")
+            with open(config_file, 'w') as f:
+                f.write(config_content)
+                
+            print(f"Created UE config: {config_file}")
+            return config_file
+            
+        except Exception as e:
+            print(f"Error creating UE config: {e}")
+            return None
     
     def open_container_terminal(self, container_name):
         """Open terminal to specific container - like MiniEdit's terminal access"""
@@ -333,86 +533,74 @@ class EnhancedContainerManager:
         except Exception as e:
             print(f"Error opening terminal for {container_name}: {e}")
     
-    def test_connectivity(self):
-        """Test connectivity between containers"""
-        if not self.deployed_containers:
-            return []
-        
-        results = []
-        containers_info = []
-        
-        # Get container IPs
-        for container in self.deployed_containers:
-            try:
-                container.reload()
-                networks = container.attrs['NetworkSettings']['Networks']
-                if self.network_name in networks:
-                    ip = networks[self.network_name]['IPAddress']
-                    containers_info.append({
-                        'name': container.name,
-                        'ip': ip,
-                        'container': container
-                    })
-            except Exception as e:
-                print(f"Error getting IP for {container.name}: {e}")
-        
-        # Test ping between all containers
-        for i, source in enumerate(containers_info):
-            for j, target in enumerate(containers_info):
-                if i != j:  # Don't ping self
-                    try:
-                        # Execute ping command
-                        result = source['container'].exec_run(
-                            f"ping -c 1 -W 2 {target['ip']}", 
-                            detach=False
-                        )
-                        success = result.exit_code == 0
-                        
-                        results.append({
-                            'source': source['name'],
-                            'target': target['name'],
-                            'source_ip': source['ip'],
-                            'target_ip': target['ip'],
-                            'success': success,
-                            'output': result.output.decode() if result.output else ""
-                        })
-                    except Exception as e:
-                        results.append({
-                            'source': source['name'],
-                            'target': target['name'],
-                            'source_ip': source['ip'],
-                            'target_ip': target['ip'],
-                            'success': False,
-                            'output': f"Error: {str(e)}"
-                        })
-        
-        return results
-    
     def get_container_status(self):
         """Get status of all deployed containers"""
-        status = []
+        status_list = []
+        
         for container in self.deployed_containers:
             try:
-                container.reload()
-                networks = container.attrs['NetworkSettings']['Networks']
-                ip = networks.get(self.network_name, {}).get('IPAddress', 'N/A')
-                
-                status.append({
-                    'name': container.name,
-                    'status': container.status,
-                    'ip': ip,
-                    'image': container.image.tags[0] if container.image.tags else 'unknown'
+                container.reload()  # Refresh container info
+                status_list.append({
+                    "name": container.name,
+                    "id": container.short_id,
+                    "status": container.status,
+                    "ip": self.get_container_ip(container),
+                    "image": container.image.tags[0] if container.image.tags else "unknown"
                 })
             except Exception as e:
-                status.append({
-                    'name': container.name if hasattr(container, 'name') else 'unknown',
-                    'status': 'error',
-                    'ip': 'N/A',
-                    'image': 'unknown',
-                    'error': str(e)
+                status_list.append({
+                    "name": getattr(container, 'name', 'unknown'),
+                    "id": getattr(container, 'short_id', 'unknown'),
+                    "status": f"error: {e}",
+                    "ip": "unknown",
+                    "image": "unknown"
                 })
         
-        return status
+        return status_list
+    
+    def get_container_ip(self, container):
+        """Get IP address of a container in the 5G network"""
+        try:
+            networks = container.attrs['NetworkSettings']['Networks']
+            if self.network_name in networks:
+                return networks[self.network_name]['IPAddress']
+            return "unknown"
+        except:
+            return "unknown"
+    
+    def test_connectivity(self):
+        """Test connectivity between containers"""
+        results = []
+        
+        for container in self.deployed_containers:
+            try:
+                # Test ping to other containers
+                for target_container in self.deployed_containers:
+                    if container != target_container:
+                        target_ip = self.get_container_ip(target_container)
+                        if target_ip != "unknown":
+                            exec_result = container.exec_run(f"ping -c 1 {target_ip}", timeout=5)
+                            success = exec_result.exit_code == 0
+                            
+                            results.append({
+                                "source": container.name,
+                                "source_ip": self.get_container_ip(container),
+                                "target": target_container.name,
+                                "target_ip": target_ip,
+                                "success": success,
+                                "error": None if success else f"Ping failed (exit code: {exec_result.exit_code})"
+                            })
+            except Exception as e:
+                results.append({
+                    "source": container.name,
+                    "source_ip": self.get_container_ip(container),
+                    "target": "unknown",
+                    "target_ip": "unknown",
+                    "success": False,
+                    "error": str(e)
+                })
+        
+        return results
     
     def cleanup(self):
         """Clean up deployed containers and network"""
@@ -445,19 +633,20 @@ class EnhancedContainerManager:
             print(f"Error during cleanup: {e}")
     
     def get_all_containers(self):
-        """Get list of all containers for terminal access"""
-        return [(container.name, container) for container in self.deployed_containers]
-    
-    def execute_command_in_container(self, container_name, command):
-        """Execute command in specific container"""
-        try:
-            for container in self.deployed_containers:
-                if container.name == container_name:
-                    result = container.exec_run(command, detach=False)
-                    return {
-                        'exit_code': result.exit_code,
-                        'output': result.output.decode() if result.output else ""
-                    }
-            return {'exit_code': 1, 'output': f'Container {container_name} not found'}
-        except Exception as e:
-            return {'exit_code': 1, 'output': f'Error: {str(e)}'}
+        """Get all deployed containers as name, container pairs"""
+        containers = []
+        
+        # Add Open5GS containers
+        for name, container in self.open5gs_containers.items():
+            containers.append((name, container))
+            
+        # Add UERANSIM containers  
+        for name, container in self.ueransim_containers.items():
+            containers.append((name, container))
+            
+        # Add any other deployed containers
+        for container in self.deployed_containers:
+            if container not in [c for _, c in containers]:
+                containers.append((container.name, container))
+                
+        return containers
