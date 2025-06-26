@@ -340,7 +340,7 @@ class EnhancedContainerManager:
             if comp_type not in self.open5gs_config:
                 print(f"Unknown Open5GS component type: {comp_type}")
                 return None
-            
+
             config = self.open5gs_config[comp_type]
             
             # Ensure config is a dictionary (defensive programming)
@@ -348,16 +348,15 @@ class EnhancedContainerManager:
                 print(f"Config for {comp_type} is not a dictionary: {type(config)}")
                 config = {"image": "openverso/open5gs:latest"}
             
-            # Create configuration files if needed
-            self.create_open5gs_config(comp_type, name, props_copy)
+            # Use base configuration files directly instead of ConfigManager
+            config_dir = f"/home/melon/netflux5g/config/open5gs"
             
             # Deploy container
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount using ConfigManager
-            config_dir = self.config_manager.get_instance_config_dir(name)
+            # Add configuration file volume mount directly to open5gs config
             volumes_list.append(f"{config_dir}:/etc/open5gs:ro")
             
             if volumes_config:
@@ -371,7 +370,7 @@ class EnhancedContainerManager:
                 for container_port, host_port in ports_config.items():
                     if host_port:
                         ports_dict[f"{container_port}"] = host_port
-            
+
             # Create proper startup command with dependencies
             if comp_type == "nrf":
                 # NRF only needs to wait for MongoDB
@@ -380,7 +379,7 @@ class EnhancedContainerManager:
                     f"echo 'Waiting for MongoDB...' && "
                     f"while ! nc -z mongodb 27017; do sleep 2; done && "
                     f"echo 'MongoDB is ready, starting NRF...' && "
-                    f"exec {' '.join(config.get('command', ['open5gs-nrfd']))}"
+                    f"exec open5gs-nrfd -c /etc/open5gs/{comp_type}.yaml"
                 ]
             else:
                 # Other Open5GS services need to wait for both MongoDB and NRF
@@ -389,9 +388,9 @@ class EnhancedContainerManager:
                     f"echo 'Waiting for MongoDB...' && "
                     f"while ! nc -z mongodb 27017; do sleep 2; done && "
                     f"echo 'Waiting for NRF...' && "
-                    f"while ! nc -z nrf 7777; do sleep 2; done && "
+                    f"while ! nc -z nrf-test 7777; do sleep 2; done && "
                     f"echo 'Dependencies ready, starting {comp_type}...' && "
-                    f"exec {' '.join(config.get('command', [f'open5gs-{comp_type}d']))}"
+                    f"exec open5gs-{comp_type}d -c /etc/open5gs/{comp_type}.yaml"
                 ]
             
             container = self.client.containers.run(
@@ -441,9 +440,6 @@ class EnhancedContainerManager:
                 
             name = props_copy.get("name", f"gnb_{comp_id}")
             
-            # Create gNB configuration
-            self.create_gnb_config(name, props_copy)
-            
             config = self.ueransim_config["gnb"]
             
             # Ensure config is a dictionary (defensive programming)
@@ -451,12 +447,14 @@ class EnhancedContainerManager:
                 print(f"gNB config is not a dictionary: {type(config)}")
                 config = {"image": "towards5gs/ueransim-gnb:v3.2.3"}
             
+            # Use base configuration files directly
+            config_dir = f"/home/melon/netflux5g/config/ueransim"
+            
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount using ConfigManager
-            config_dir = self.config_manager.get_instance_config_dir(name)
+            # Add configuration file volume mount directly to ueransim config
             volumes_list.append(f"{config_dir}:/etc/ueransim:ro")
             
             if volumes_config:
@@ -465,7 +463,13 @@ class EnhancedContainerManager:
             
             container = self.client.containers.run(
                 config.get("image", "towards5gs/ueransim-gnb:v3.2.3"),
-                command=config.get("command", "sleep infinity"),
+                command=[
+                    "sh", "-c", 
+                    f"echo 'Waiting for AMF...' && "
+                    f"while ! nc -z amf-test 38412; do sleep 2; done && "
+                    f"echo 'AMF is ready, starting gNB...' && "
+                    f"exec /ueransim/build/nr-gnb -c /etc/ueransim/gnb.yaml"
+                ],
                 name=name,
                 network=self.network_name,
                 detach=True,
@@ -510,9 +514,6 @@ class EnhancedContainerManager:
                 
             name = props_copy.get("name", f"ue_{comp_id}")
             
-            # Create UE configuration
-            self.create_ue_config(name, props_copy)
-            
             config = self.ueransim_config["ue"]
             
             # Ensure config is a dictionary (defensive programming)
@@ -520,12 +521,14 @@ class EnhancedContainerManager:
                 print(f"UE config is not a dictionary: {type(config)}")
                 config = {"image": "towards5gs/ueransim-ue:v3.2.3"}
             
+            # Use base configuration files directly instead of ConfigManager
+            config_dir = f"/home/melon/netflux5g/config/ueransim"
+            
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount using ConfigManager
-            config_dir = self.config_manager.get_instance_config_dir(name)
+            # Add configuration file volume mount directly to ueransim config
             volumes_list.append(f"{config_dir}:/etc/ueransim:ro")
             
             if volumes_config:
@@ -534,7 +537,13 @@ class EnhancedContainerManager:
             
             container = self.client.containers.run(
                 config.get("image", "towards5gs/ueransim-ue:v3.2.3"),
-                command=config.get("command", "sleep infinity"), 
+                command=[
+                    "sh", "-c", 
+                    f"echo 'Waiting for gNB...' && "
+                    f"while ! nc -z gnb-test 4997; do sleep 2; done && "
+                    f"echo 'gNB is ready, starting UE...' && "
+                    f"exec /ueransim/build/nr-ue -c /etc/ueransim/ue.yaml"
+                ],
                 name=name,
                 network=self.network_name,
                 detach=True,
@@ -717,25 +726,6 @@ class EnhancedContainerManager:
                 
         except Exception as e:
             print(f"Error creating gNB config: {e}")
-            return None
-    
-    def create_ue_config(self, name, properties=None):
-        """Create UERANSIM UE configuration using ConfigManager"""
-        try:
-            # Use the new configuration manager to create instance-specific config
-            config_file = self.config_manager.create_instance_config(
-                'ue', name, properties
-            )
-            
-            if config_file:
-                print(f"Created UE config: {config_file}")
-                return config_file
-            else:
-                print(f"Failed to create UE config for {name}")
-                return None
-                
-        except Exception as e:
-            print(f"Error creating UE config: {e}")
             return None
     
     def open_container_terminal(self, container_name):
