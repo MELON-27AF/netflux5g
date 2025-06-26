@@ -671,32 +671,8 @@ class EnhancedContainerManager:
                 memswap_limit=config.get("memswap_limit", "256m")
             )
             
-            # Wait for MongoDB to be ready
-            import time
-            print("⏳ Waiting for MongoDB to initialize...")
-            
-            # Reduced wait time and simpler check
-            max_wait = 15  # Reduced from 30 to 15 seconds
-            wait_interval = 1  # Check every 1 second instead of 2
-            mongodb_ready = False
-            
-            for i in range(max_wait):
-                try:
-                    # Simple check - just try to connect to MongoDB port
-                    result = container.exec_run("nc -z localhost 27017", timeout=2)
-                    if result.exit_code == 0:
-                        mongodb_ready = True
-                        print(f"✅ MongoDB is ready after {i + 1} seconds")
-                        break
-                except:
-                    pass
-                
-                if i % 3 == 0:  # Print status every 3 seconds
-                    print(f"   Waiting... ({i + 1}/{max_wait}s)")
-                time.sleep(wait_interval)
-            
-            if not mongodb_ready:
-                print("⚠️ MongoDB may not be fully ready, but continuing with deployment...")
+            # MongoDB will be ready shortly - let other containers wait for it
+            print("✅ MongoDB container started - other containers will wait for it to be ready")
             
             print(f"Deployed standalone MongoDB: {name}")
             return container
