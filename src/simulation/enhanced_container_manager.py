@@ -675,23 +675,24 @@ class EnhancedContainerManager:
             import time
             print("⏳ Waiting for MongoDB to initialize...")
             
-            # Check if MongoDB is ready by trying to connect
-            max_wait = 30  # Maximum wait time in seconds
-            wait_interval = 2  # Check every 2 seconds
+            # Reduced wait time and simpler check
+            max_wait = 15  # Reduced from 30 to 15 seconds
+            wait_interval = 1  # Check every 1 second instead of 2
             mongodb_ready = False
             
-            for i in range(0, max_wait, wait_interval):
+            for i in range(max_wait):
                 try:
-                    # Try to execute a simple command to check if MongoDB is ready
-                    result = container.exec_run("mongosh --eval 'db.adminCommand(\"ping\")'", timeout=5)
+                    # Simple check - just try to connect to MongoDB port
+                    result = container.exec_run("nc -z localhost 27017", timeout=2)
                     if result.exit_code == 0:
                         mongodb_ready = True
-                        print(f"✅ MongoDB is ready after {i + wait_interval} seconds")
+                        print(f"✅ MongoDB is ready after {i + 1} seconds")
                         break
                 except:
                     pass
                 
-                print(f"   Waiting... ({i + wait_interval}/{max_wait}s)")
+                if i % 3 == 0:  # Print status every 3 seconds
+                    print(f"   Waiting... ({i + 1}/{max_wait}s)")
                 time.sleep(wait_interval)
             
             if not mongodb_ready:
