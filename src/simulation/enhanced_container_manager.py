@@ -38,7 +38,7 @@ class EnhancedContainerManager:
         self.open5gs_config = {
             "mongodb": {
                 "image": "mongo:4.4",
-                "ports": {"27017": "27017"},
+                "ports": {},  # Remove port mapping - MongoDB only needs internal access
                 "environment": {},
                 "volumes": {},
                 "mem_limit": "256m",
@@ -631,14 +631,7 @@ class EnhancedContainerManager:
             name = "mongodb"
             config = self.open5gs_config["mongodb"]
             
-            # Prepare ports correctly for Docker
-            ports_config = config.get("ports", {})
-            ports_dict = {}
-            if ports_config:
-                for container_port, host_port in ports_config.items():
-                    if host_port:
-                        ports_dict[f"{container_port}"] = host_port
-            
+            # Don't use any port mapping for MongoDB - internal access only
             container = self.client.containers.run(
                 config.get("image", "mongo:4.4"),
                 name=name,
@@ -646,11 +639,15 @@ class EnhancedContainerManager:
                 detach=True,
                 remove=False,
                 environment=config.get("environment", {}),
-                ports=ports_dict if ports_dict else None,
                 restart_policy={"Name": "no"},
                 mem_limit=config.get("mem_limit", "256m"),
                 memswap_limit=config.get("memswap_limit", "256m")
             )
+            
+            # Wait for MongoDB to be ready
+            import time
+            print("⏳ Waiting for MongoDB to initialize...")
+            time.sleep(10)  # Give MongoDB time to start
             
             print(f"Deployed standalone MongoDB: {name}")
             return container
