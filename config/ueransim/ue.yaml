@@ -85,7 +85,6 @@ integrityMaxRate:
 # Logging configuration
 logger:
   level: warn # Log level: trace, debug, info, warn, error, fatal
-  file: /var/log/ueransim/ue.log
 
 # UE capability parameters
 ueCapability:

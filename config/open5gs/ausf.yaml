@@ -5,7 +5,6 @@ db_uri: mongodb://mongodb:27017/open5gs
 
 logger:
   level: info
-  file: /var/log/open5gs/ausf.log
 
 ausf:
   sbi:

@@ -3,7 +3,6 @@
 
 logger:
   level: info
-  file: /var/log/open5gs/upf.log
 
 upf:
   pfcp:

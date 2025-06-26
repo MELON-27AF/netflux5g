@@ -31,7 +31,6 @@ ignoreStreamIds: []
 # Logging configuration
 logger:
   level: warn # Log level: trace, debug, info, warn, error, fatal
-  file: /var/log/ueransim/gnb.log
 
 # Cell configuration
 cellCfgList:
