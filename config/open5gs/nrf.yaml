@@ -8,23 +8,11 @@ logger:
   file: /var/log/open5gs/nrf.log
 
 nrf:
+  serving:
+    - plmn_id:
+        mcc: 999
+        mnc: 70
   sbi:
-    - addr: 0.0.0.0
-      port: 7777
-
-  # Service Binding Interface for NRF
-  discovery:
-    option:
-      no_ipv4: false
-      no_ipv6: true
-      prefer_ipv4: true
-
-  # NRF specific parameters
-  nf_profile:
-    validity_time: 3600
-    heartbeat_timer: 60
-
-  # MongoDB configuration
-  mongodb:
-    uri: mongodb://mongodb:27017/open5gs
-    timeout: 5000
+    server:
+      - address: 0.0.0.0
+        port: 7777

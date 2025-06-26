@@ -25,10 +25,6 @@ slices:
   - sst: 1 # Slice/Service Type
     sd: 0x010203 # Slice Differentiator (optional)
 
-# Required field to prevent startup errors
-# Stream IDs to ignore during SCTP connection
-ignoreStreamIds: [1, 2, 3, 4]
-
 # Logging configuration
 logger:
   level: warn # Log level: trace, debug, info, warn, error, fatal

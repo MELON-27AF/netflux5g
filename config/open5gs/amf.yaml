@@ -9,16 +9,22 @@ logger:
 
 amf:
   sbi:
-    - addr: 0.0.0.0
-      port: 80
+    server:
+      - address: 0.0.0.0
+        port: 7778
+    client:
+      nrf:
+        - uri: http://nrf:7777
 
   ngap:
-    - addr: 0.0.0.0
-      port: 38412
+    server:
+      - address: 0.0.0.0
+        port: 38412
 
   metrics:
-    - addr: 0.0.0.0
-      port: 9090
+    server:
+      - address: 0.0.0.0
+        port: 9090
 
   guami:
     - plmn_id:
@@ -58,8 +64,3 @@ amf:
       value: 720 # 12 minutes
     t3512:
       value: 3240 # 54 minutes
-
-nrf:
-  sbi:
-    - addr: nrf
-      port: 7777
