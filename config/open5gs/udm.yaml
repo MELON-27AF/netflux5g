@@ -1,0 +1,37 @@
+# NetFlux5G - UDM (Unified Data Management) Configuration
+# Open5GS UDM configuration for NetFlux5G 5G Core Network Simulation
+
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+  level: info
+  file: /var/log/open5gs/udm.log
+
+udm:
+  sbi:
+    - addr: 0.0.0.0
+      port: 80
+
+  metrics:
+    - addr: 0.0.0.0
+      port: 9090
+
+  # UDM specific parameters
+  udr:
+    enabled: true
+
+  # Subscription data management
+  subscription:
+    # Default subscription profile
+    default_apn: internet
+    default_qos:
+      qci: 9
+      arp:
+        priority: 8
+        preemption_capability: 1
+        preemption_vulnerability: 1
+
+nrf:
+  sbi:
+    - addr: nrf
+      port: 7777

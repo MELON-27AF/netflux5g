@@ -1,0 +1,36 @@
+# NetFlux5G - UPF (User Plane Function) Configuration
+# Open5GS UPF configuration for NetFlux5G 5G Core Network Simulation
+
+logger:
+  level: info
+  file: /var/log/open5gs/upf.log
+
+upf:
+  pfcp:
+    - addr: 0.0.0.0
+      port: 8805
+
+  gtpu:
+    - addr: 0.0.0.0
+      port: 2152
+
+  metrics:
+    - addr: 0.0.0.0
+      port: 9090
+
+  subnet:
+    - addr: 10.45.0.1/16
+      dnn: internet
+      dev: ogstun
+
+  # Enable NAT for internet access
+  dev: ogstun
+
+  # MTU configuration
+  mtu: 1400
+
+# SMF configuration for UPF
+smf:
+  pfcp:
+    - addr: smf
+      port: 8805

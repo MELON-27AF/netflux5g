@@ -1,0 +1,36 @@
+# NetFlux5G - AUSF (Authentication Server Function) Configuration
+# Open5GS AUSF configuration for NetFlux5G 5G Core Network Simulation
+
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+  level: info
+  file: /var/log/open5gs/ausf.log
+
+ausf:
+  sbi:
+    - addr: 0.0.0.0
+      port: 80
+
+  metrics:
+    - addr: 0.0.0.0
+      port: 9090
+
+  # Authentication parameters
+  authentication:
+    # SUPI concealment configuration
+    supi_concealment:
+      enabled: true
+
+    # 5G AKA authentication
+    aka:
+      enabled: true
+
+    # EAP-AKA' authentication
+    eap_aka_prime:
+      enabled: true
+
+nrf:
+  sbi:
+    - addr: nrf
+      port: 7777

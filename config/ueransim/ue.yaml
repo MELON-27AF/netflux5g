@@ -1,0 +1,114 @@
+# NetFlux5G - UE (User Equipment) Configuration
+# UERANSIM UE configuration for NetFlux5G 5G Device Simulation
+
+# IMSI number of the UE. IMSI = [MCC|MNC|MSISDN] (In total 15 digits)
+supi: "imsi-999700000000001"
+
+# Mobile Country Code and Mobile Network Code
+mcc: "999"
+mnc: "70"
+
+# Routing Indicator
+routingIndicator: "0000"
+
+# Permanent subscription key (128-bit key in hex)
+key: "465B5CE8B199B49FAA5F0A2EE238A6BC"
+
+# Operator code (OP or OPC) of the UE
+op: "E8ED289DEBA952E4283B54E88E6183CA"
+
+# This value specifies the OP type and it can be either 'OP' or 'OPC'
+opType: "OPC"
+
+# Authentication Management Field (AMF) value
+amf: "8000"
+
+# IMEI number of the device. It is used if no SUPI is provided
+imei: "356938035643803"
+
+# IMEISV number of the device. It is used if no SUPI and IMEI is provided
+imeiSv: "4370816125816151"
+
+# List of gNB IP addresses for Radio Link Simulation
+gnbSearchList:
+  - 127.0.0.1
+
+# UAC Access Identities Configuration
+uacAic:
+  mps: false # Mobile Priority Service
+  mcs: false # Mission Critical Service
+
+# UAC Access Control Class
+uacAcc:
+  normalClass: 0
+  class11: false
+  class12: false
+  class13: false
+  class14: false
+  class15: false
+
+# Initial PDU sessions to be established
+sessions:
+  - type: "IPv4" # Session type: IPv4, IPv6, IPv4v6
+    apn: "internet" # Access Point Name
+    slice:
+      sst: 1 # Slice/Service Type
+      sd: 0x010203 # Slice Differentiator (optional)
+
+# Configured NSSAI for this UE by HPLMN
+configured-nssai:
+  - sst: 1
+    sd: 0x010203
+
+# Default Configured NSSAI for this UE
+default-nssai:
+  - sst: 1
+    sd: 0x010203
+
+# Supported integrity algorithms by this UE
+integrity:
+  IA1: true # 128-NULL
+  IA2: true # 128-AES
+  IA3: true # 128-ZUC
+
+# Supported encryption algorithms by this UE
+ciphering:
+  EA1: true # 128-NULL
+  EA2: true # 128-AES
+  EA3: true # 128-ZUC
+
+# Integrity protection maximum data rate for user plane
+integrityMaxRate:
+  uplink: "full" # Maximum data rate for uplink
+  downlink: "full" # Maximum data rate for downlink
+
+# Logging configuration
+logger:
+  level: warn # Log level: trace, debug, info, warn, error, fatal
+  file: /var/log/ueransim/ue.log
+
+# UE capability parameters
+ueCapability:
+  # Supported frequency bands
+  supportedBands: [1, 3, 5, 7, 8, 20, 28, 38, 41, 77, 78, 79]
+
+  # Feature group indicators
+  featureGroupIndicators:
+    - 0x0000000000000000
+    - 0x0000000000000000
+
+# Power configuration
+power:
+  maxTxPower: 23 # Maximum transmission power in dBm
+
+# Measurement configuration
+measurement:
+  # Event A1: Serving becomes better than threshold
+  eventA1:
+    threshold: -70 # RSRP threshold in dBm
+    hysteresis: 2 # Hysteresis in dB
+
+  # Event A2: Serving becomes worse than threshold
+  eventA2:
+    threshold: -90 # RSRP threshold in dBm
+    hysteresis: 2 # Hysteresis in dB

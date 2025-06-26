@@ -4,6 +4,11 @@ import subprocess
 import os
 import time
 import json
+import sys
+
+# Add the src directory to the path to import our modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.config_manager import ConfigManager
 
 class EnhancedContainerManager:
     """
@@ -33,6 +38,9 @@ class EnhancedContainerManager:
         self.open5gs_containers = {}
         self.ueransim_containers = {}
         self.terminal_processes = {}
+        
+        # Initialize configuration manager
+        self.config_manager = ConfigManager()
         
         # 5G Core component configurations
         self.open5gs_config = {
@@ -348,10 +356,9 @@ class EnhancedContainerManager:
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount
-            import os
-            abs_config_dir = os.path.abspath(f"./config/open5gs/{name}")
-            volumes_list.append(f"{abs_config_dir}:/etc/open5gs:ro")
+            # Add configuration file volume mount using ConfigManager
+            config_dir = self.config_manager.get_instance_config_dir(name)
+            volumes_list.append(f"{config_dir}:/etc/open5gs:ro")
             
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
@@ -448,10 +455,9 @@ class EnhancedContainerManager:
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount
-            import os
-            abs_config_dir = os.path.abspath(f"./config/ueransim/{name}")
-            volumes_list.append(f"{abs_config_dir}:/etc/ueransim:ro")
+            # Add configuration file volume mount using ConfigManager
+            config_dir = self.config_manager.get_instance_config_dir(name)
+            volumes_list.append(f"{config_dir}:/etc/ueransim:ro")
             
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
@@ -518,10 +524,9 @@ class EnhancedContainerManager:
             volumes_config = config.get("volumes", {})
             volumes_list = []
             
-            # Add configuration file volume mount
-            import os
-            abs_config_dir = os.path.abspath(f"./config/ueransim/{name}")
-            volumes_list.append(f"{abs_config_dir}:/etc/ueransim:ro")
+            # Add configuration file volume mount using ConfigManager
+            config_dir = self.config_manager.get_instance_config_dir(name)
+            volumes_list.append(f"{config_dir}:/etc/ueransim:ro")
             
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
@@ -679,307 +684,58 @@ class EnhancedContainerManager:
             return None
 
     def create_open5gs_config(self, comp_type, name, properties=None):
-        """Create Open5GS configuration files"""
+        """Create Open5GS configuration files using ConfigManager"""
         try:
-            import os
+            # Use the new configuration manager to create instance-specific config
+            config_file = self.config_manager.create_instance_config(
+                comp_type, name, properties
+            )
             
-            config_dir = f"./config/open5gs/{name}"
-            os.makedirs(config_dir, exist_ok=True)
-            
-            # Base configuration templates
-            if comp_type == "nrf":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-nrf:
-    sbi:
-        addr: 0.0.0.0
-        port: 7777
-"""
-            elif comp_type == "amf":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-amf:
-    sbi:
-        addr: 0.0.0.0
-        port: 80
-    ngap:
-        addr: 0.0.0.0
-        port: 38412
-    guami:
-        - plmn_id:
-            mcc: 999
-            mnc: 70
-          amf_id:
-            region: 2
-            set: 1
-    tai:
-        - plmn_id:
-            mcc: 999
-            mnc: 70
-          tac: 1
-    plmn_support:
-        - plmn_id:
-            mcc: 999
-            mnc: 70
-          s_nssai:
-            - sst: 1
-
-nrf:
-    sbi:
-        addr: nrf
-        port: 7777
-"""
-            elif comp_type == "smf":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-smf:
-    sbi:
-        addr: 0.0.0.0
-        port: 80
-    pfcp:
-        addr: 0.0.0.0
-    subnet:
-        - addr: 10.45.0.1/16
-    dns:
-        - 8.8.8.8
-        - 8.8.4.4
-
-nrf:
-    sbi:
-        addr: nrf
-        port: 7777
-"""
-            elif comp_type == "upf":
-                config_content = f"""
-logger:
-    level: info
-
-upf:
-    pfcp:
-        addr: 0.0.0.0
-    gtpu:
-        addr: 0.0.0.0
-    subnet:
-        - addr: 10.45.0.1/16
-"""
-            elif comp_type == "ausf":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-ausf:
-    sbi:
-        addr: 0.0.0.0
-        port: 80
-
-nrf:
-    sbi:
-        addr: nrf
-        port: 7777
-"""
-            elif comp_type == "udm":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-udm:
-    sbi:
-        addr: 0.0.0.0
-        port: 80
-
-nrf:
-    sbi:
-        addr: nrf
-        port: 7777
-"""
-            elif comp_type == "pcf":
-                config_content = f"""
-db_uri: mongodb://mongodb:27017/open5gs
-
-logger:
-    level: info
-
-pcf:
-    sbi:
-        addr: 0.0.0.0
-        port: 80
-
-nrf:
-    sbi:
-        addr: nrf
-        port: 7777
-"""
+            if config_file:
+                print(f"Created Open5GS config file: {config_file}")
+                return config_file
             else:
-                config_content = f"# Configuration for {comp_type}"
-            
-            config_file = os.path.join(config_dir, f"{comp_type}.yaml")
-            with open(config_file, 'w') as f:
-                f.write(config_content)
+                print(f"Failed to create config for {comp_type}")
+                return None
                 
-            print(f"Created config file: {config_file}")
-            return config_file
-            
         except Exception as e:
             print(f"Error creating config for {comp_type}: {e}")
             return None
     
     def create_gnb_config(self, name, properties=None):
-        """Create UERANSIM gNB configuration"""
+        """Create UERANSIM gNB configuration using ConfigManager"""
         try:
-            import os
+            # Use the new configuration manager to create instance-specific config
+            config_file = self.config_manager.create_instance_config(
+                'gnb', name, properties
+            )
             
-            config_dir = f"./config/ueransim/{name}"
-            os.makedirs(config_dir, exist_ok=True)
-            
-            mcc = properties.get("mcc", "999") if properties else "999"
-            mnc = properties.get("mnc", "70") if properties else "70"
-            nci = properties.get("nci", "0x000000010") if properties else "0x000000010"
-            
-            config_content = f"""
-mcc: '{mcc}'
-mnc: '{mnc}'
-nci: {nci}
-idLength: 32
-tac: 1
-linkIp: 127.0.0.1
-ngapIp: 127.0.0.1
-gtpIp: 127.0.0.1
-
-amfConfigs:
-  - address: amf
-    port: 38412
-
-slices:
-  - sst: 1
-
-# Required field to prevent startup errors
-ignoreStreamIds: [1, 2, 3, 4]
-
-logger:
-  level: warn
-"""
-            
-            config_file = os.path.join(config_dir, "gnb.yaml")
-            with open(config_file, 'w') as f:
-                f.write(config_content)
+            if config_file:
+                print(f"Created gNB config: {config_file}")
+                return config_file
+            else:
+                print(f"Failed to create gNB config for {name}")
+                return None
                 
-            print(f"Created gNB config: {config_file}")
-            return config_file
-            
         except Exception as e:
             print(f"Error creating gNB config: {e}")
             return None
     
     def create_ue_config(self, name, properties=None):
-        """Create UERANSIM UE configuration"""
+        """Create UERANSIM UE configuration using ConfigManager"""
         try:
-            import os
+            # Use the new configuration manager to create instance-specific config
+            config_file = self.config_manager.create_instance_config(
+                'ue', name, properties
+            )
             
-            config_dir = f"./config/ueransim/{name}"
-            os.makedirs(config_dir, exist_ok=True)
-            
-            imsi = properties.get("imsi", "001010000000001") if properties else "001010000000001"
-            key = properties.get("key", "465B5CE8B199B49FAA5F0A2EE238A6BC") if properties else "465B5CE8B199B49FAA5F0A2EE238A6BC"
-            
-            config_content = f"""
-# IMSI number of the UE. IMSI = [MCC|MNC|MSISDN] (In total 15 digits)
-supi: 'imsi-{imsi}'
-mcc: '999'
-mnc: '70'
-routingIndicator: '0000'
-
-# Permanent subscription key
-key: '{key}'
-# Operator code (OP or OPC) of the UE
-op: 'E8ED289DEBA952E4283B54E88E6183CA'
-# This value specifies the OP type and it can be either 'OP' or 'OPC'
-opType: 'OPC'
-
-# Authentication Management Field (AMF) value
-amf: '8000'
-# IMEI number of the device. It is used if no SUPI is provided
-imei: '356938035643803'
-# IMEISV number of the device. It is used if no SUPI and IMEI is provided
-imeiSv: '4370816125816151'
-
-# List of gNB IP addresses for Radio Link Simulation
-gnbSearchList:
-  - 127.0.0.1
-
-# UAC Access Identities Configuration
-uacAic:
-  mps: false
-  mcs: false
-
-# UAC Access Control Class
-uacAcc:
-  normalClass: 0
-  class11: false
-  class12: false
-  class13: false
-  class14: false
-  class15: false
-
-# Initial PDU sessions to be established
-sessions:
-  - type: 'IPv4'
-    apn: 'internet'
-    slice:
-      sst: 1
-
-# Configured NSSAI for this UE by HPLMN
-configured-nssai:
-  - sst: 1
-
-# Default Configured NSSAI for this UE
-default-nssai:
-  - sst: 1
-    sd: 1
-
-# Supported integrity algorithms by this UE
-integrity:
-  IA1: true
-  IA2: true
-  IA3: true
-
-# Supported encryption algorithms by this UE
-ciphering:
-  EA1: true
-  EA2: true
-  EA3: true
-
-# Integrity protection maximum data rate for user plane
-integrityMaxRate:
-  uplink: 'full'
-  downlink: 'full'
-
-logger:
-  level: warn
-"""
-            
-            config_file = os.path.join(config_dir, "ue.yaml")
-            with open(config_file, 'w') as f:
-                f.write(config_content)
+            if config_file:
+                print(f"Created UE config: {config_file}")
+                return config_file
+            else:
+                print(f"Failed to create UE config for {name}")
+                return None
                 
-            print(f"Created UE config: {config_file}")
-            return config_file
-            
         except Exception as e:
             print(f"Error creating UE config: {e}")
             return None
@@ -1073,12 +829,20 @@ logger:
     def cleanup(self):
         """Clean up deployed containers and network"""
         try:
-            # Stop and remove containers
+            print("🧹 Cleaning up containers and configurations...")
+            
+            # Stop and remove containers and clean up their configurations
             for container in self.deployed_containers:
                 try:
+                    container_name = getattr(container, 'name', 'unknown')
+                    
+                    # Clean up configuration for this instance
+                    self.config_manager.cleanup_instance_config(container_name)
+                    
+                    # Stop and remove container
                     container.stop(timeout=10)
                     container.remove()
-                    print(f"Cleaned up container: {container.name}")
+                    print(f"Cleaned up container: {container_name}")
                 except Exception as e:
                     print(f"Error cleaning up container {container.name}: {e}")
             
@@ -1096,6 +860,8 @@ logger:
             self.deployed_containers = []
             self.open5gs_containers = {}
             self.ueransim_containers = {}
+            
+            print("✅ Cleanup completed")
             
         except Exception as e:
             print(f"Error during cleanup: {e}")

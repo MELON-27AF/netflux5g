@@ -1,0 +1,64 @@
+# NetFlux5G - gNB (Next Generation NodeB) Configuration
+# UERANSIM gNB configuration for NetFlux5G 5G RAN Simulation
+
+# MCC and MNC configuration
+mcc: "999"
+mnc: "70"
+
+# gNB Identity
+nci: 0x000000010 # NR Cell Identity (36-bit)
+idLength: 32 # NR gNB ID length in bits [22...32]
+tac: 1 # Tracking Area Code
+
+# IP configuration for gNB
+linkIp: 127.0.0.1 # gNB's local IP address for Radio Link Simulation (Usually same with local IP)
+ngapIp: 127.0.0.1 # gNB's local IP address for N2 Interface (Usually same with local IP)
+gtpIp: 127.0.0.1 # gNB's local IP address for N3 Interface (Usually same with local IP)
+
+# List of AMF configurations
+amfConfigs:
+  - address: amf # AMF IP address or hostname
+    port: 38412 # AMF port for NGAP
+
+# List of supported S-NSSAIs by this gNB
+slices:
+  - sst: 1 # Slice/Service Type
+    sd: 0x010203 # Slice Differentiator (optional)
+
+# Required field to prevent startup errors
+# Stream IDs to ignore during SCTP connection
+ignoreStreamIds: [1, 2, 3, 4]
+
+# Logging configuration
+logger:
+  level: warn # Log level: trace, debug, info, warn, error, fatal
+  file: /var/log/ueransim/gnb.log
+
+# Cell configuration
+cellCfgList:
+  - cellId: 1
+    # Physical parameters
+    earfcn: 632640 # NR-ARFCN for downlink
+    txPower: 23 # Transmission power in dBm
+
+    # Frame structure
+    numerology: 1 # Subcarrier spacing (0=15kHz, 1=30kHz, 2=60kHz)
+    bandwidth: 20 # Channel bandwidth in MHz
+
+    # Beam management
+    beamforming:
+      enabled: false
+
+# RRC configuration
+rrc:
+  # Maximum number of UE connections
+  maxConnections: 16
+
+  # UE capability parameters
+  ueCapability:
+    supportedBands: [78, 79] # Supported frequency bands
+
+# Security configuration
+security:
+  integrityAlgorithms: [NIA1, NIA2, NIA3]
+  cipheringAlgorithms: [NEA0, NEA1, NEA2, NEA3]

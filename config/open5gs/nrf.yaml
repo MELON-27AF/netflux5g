@@ -1,0 +1,30 @@
+# NetFlux5G - NRF (Network Repository Function) Configuration
+# Open5GS NRF configuration for NetFlux5G 5G Core Network Simulation
+
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+  level: info
+  file: /var/log/open5gs/nrf.log
+
+nrf:
+  sbi:
+    - addr: 0.0.0.0
+      port: 7777
+
+  # Service Binding Interface for NRF
+  discovery:
+    option:
+      no_ipv4: false
+      no_ipv6: true
+      prefer_ipv4: true
+
+  # NRF specific parameters
+  nf_profile:
+    validity_time: 3600
+    heartbeat_timer: 60
+
+  # MongoDB configuration
+  mongodb:
+    uri: mongodb://mongodb:27017/open5gs
+    timeout: 5000
