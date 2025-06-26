@@ -416,8 +416,8 @@ class EnhancedContainerManager:
                 startup_command = [
                     "sh", "-c", 
                     f"echo 'Waiting for MongoDB...' && "
-                    f"while ! nc -z mongodb 27017; do sleep 2; done && "
-                    f"echo 'MongoDB is ready, starting NRF...' && "
+                    f"sleep 10 && "  # Simple sleep instead of nc
+                    f"echo 'MongoDB should be ready, starting NRF...' && "
                     f"exec open5gs-nrfd -c /etc/open5gs/{comp_type}.yaml"
                 ]
             elif comp_type == "upf":
@@ -433,20 +433,17 @@ class EnhancedContainerManager:
                     f"iptables -t nat -A POSTROUTING -s 10.45.0.0/16 ! -d 10.45.0.0/16 -j MASQUERADE && "
                     f"echo 'NAT rules configured for UE internet access' && "
                     f"echo 'Waiting for dependencies...' && "
-                    f"while ! nc -z mongodb 27017; do sleep 2; done && "
-                    f"while ! nc -z nrf-test 7777; do sleep 2; done && "
-                    f"echo 'Dependencies ready, starting UPF...' && "
+                    f"sleep 20 && "  # Wait for MongoDB and NRF
+                    f"echo 'Dependencies should be ready, starting UPF...' && "
                     f"exec open5gs-upfd -c /etc/open5gs/{comp_type}.yaml"
                 ]
             else:
-                # Other Open5GS services need to wait for both MongoDB and NRF
+                # Other Open5GS services need to wait for MongoDB and NRF
                 startup_command = [
                     "sh", "-c", 
-                    f"echo 'Waiting for MongoDB...' && "
-                    f"while ! nc -z mongodb 27017; do sleep 2; done && "
-                    f"echo 'Waiting for NRF...' && "
-                    f"while ! nc -z nrf-test 7777; do sleep 2; done && "
-                    f"echo 'Dependencies ready, starting {comp_type}...' && "
+                    f"echo 'Waiting for dependencies...' && "
+                    f"sleep 15 && "  # Wait for MongoDB and NRF
+                    f"echo 'Dependencies should be ready, starting {comp_type}...' && "
                     f"exec open5gs-{comp_type}d -c /etc/open5gs/{comp_type}.yaml"
                 ]
             
@@ -526,10 +523,9 @@ class EnhancedContainerManager:
                 command=[
                     "sh", "-c", 
                     f"echo 'Waiting for AMF...' && "
-                    f"while ! nc -z amf-test 38412; do sleep 2; done && "
-                    f"echo 'AMF is ready, starting gNB...' && "
+                    f"sleep 30 && "  # Wait for AMF to be ready
+                    f"echo 'AMF should be ready, starting gNB...' && "
                     f"echo 'Setting up network interfaces for gNB...' && "
-                    f"ip route add default via internet-gw 2>/dev/null || true && "
                     f"exec /ueransim/build/nr-gnb -c /etc/ueransim/gnb.yaml"
                 ],
                 name=name,
@@ -605,16 +601,21 @@ class EnhancedContainerManager:
                 command=[
                     "sh", "-c", 
                     f"echo 'Waiting for gNB...' && "
-                    f"while ! nc -z gnb-test 4997; do sleep 2; done && "
-                    f"echo 'gNB is ready, starting UE...' && "
-                    f"echo 'Setting up networking for UE...' && "
-                    f"sleep 10 && "  # Wait for UE registration
+                    f"sleep 40 && "  # Wait for gNB to be ready
+                    f"echo 'gNB should be ready, starting UE...' && "
+                    f"echo 'Starting UE registration process...' && "
                     f"/ueransim/build/nr-ue -c /etc/ueransim/ue.yaml &"
                     f"UE_PID=$! && "
+                    f"echo 'UE process started, waiting for registration...' && "
                     f"sleep 20 && "  # Wait for PDU session establishment
-                    f"echo 'Setting up default route through tunnel interface...' && "
-                    f"ip route add default dev uesimtun0 2>/dev/null || true && "
-                    f"echo 'UE connectivity setup complete' && "
+                    f"echo 'Checking for tunnel interface...' && "
+                    f"if ip addr show uesimtun0 >/dev/null 2>&1; then "
+                    f"  echo 'Tunnel interface found, setting up routing...' && "
+                    f"  ip route add default dev uesimtun0 metric 1 2>/dev/null || true; "
+                    f"else "
+                    f"  echo 'No tunnel interface found yet'; "
+                    f"fi && "
+                    f"echo 'UE setup complete' && "
                     f"wait $UE_PID"
                 ],
                 name=name,
