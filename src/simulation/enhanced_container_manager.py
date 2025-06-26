@@ -674,7 +674,28 @@ class EnhancedContainerManager:
             # Wait for MongoDB to be ready
             import time
             print("⏳ Waiting for MongoDB to initialize...")
-            time.sleep(10)  # Give MongoDB time to start
+            
+            # Check if MongoDB is ready by trying to connect
+            max_wait = 30  # Maximum wait time in seconds
+            wait_interval = 2  # Check every 2 seconds
+            mongodb_ready = False
+            
+            for i in range(0, max_wait, wait_interval):
+                try:
+                    # Try to execute a simple command to check if MongoDB is ready
+                    result = container.exec_run("mongosh --eval 'db.adminCommand(\"ping\")'", timeout=5)
+                    if result.exit_code == 0:
+                        mongodb_ready = True
+                        print(f"✅ MongoDB is ready after {i + wait_interval} seconds")
+                        break
+                except:
+                    pass
+                
+                print(f"   Waiting... ({i + wait_interval}/{max_wait}s)")
+                time.sleep(wait_interval)
+            
+            if not mongodb_ready:
+                print("⚠️ MongoDB may not be fully ready, but continuing with deployment...")
             
             print(f"Deployed standalone MongoDB: {name}")
             return container
