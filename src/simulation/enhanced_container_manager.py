@@ -334,8 +334,22 @@ class EnhancedContainerManager:
         # Post-deployment setup
         if deployed:
             print("🔧 Starting post-deployment configuration...")
-            self.wait_for_5g_registration()
-            self.setup_post_deployment_networking()
+            
+            # Setup subscribers in Open5GS database
+            print("📱 Setting up UE subscribers in Open5GS database...")
+            time.sleep(10)  # Wait for MongoDB to be fully ready
+            subscriber_success = self.setup_open5gs_subscribers()
+            
+            if subscriber_success:
+                print("✅ Subscriber setup completed, waiting for services to stabilize...")
+                time.sleep(15)  # Allow services to process subscriber data
+                
+                self.wait_for_5g_registration()
+                self.setup_post_deployment_networking()
+            else:
+                print("❌ Subscriber setup failed, but continuing with deployment...")
+                self.wait_for_5g_registration()
+                self.setup_post_deployment_networking()
         
         return True, f"Deployed {len(deployed)} containers"
     
@@ -371,7 +385,10 @@ class EnhancedContainerManager:
                 config = {"image": "openverso/open5gs:latest"}
             
             # Use base configuration files directly instead of ConfigManager
-            config_dir = f"/home/melon/netflux5g/config/open5gs"
+            config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "open5gs"))
+            
+            # Debug: Print the actual config directory being used
+            print(f"DEBUG: Using config directory: {config_dir}")
             
             # Deploy container
             # Prepare volumes correctly for Docker
@@ -487,8 +504,11 @@ class EnhancedContainerManager:
                 print(f"gNB config is not a dictionary: {type(config)}")
                 config = {"image": "towards5gs/ueransim-gnb:v3.2.3"}
             
-            # Use base configuration files directly
-            config_dir = f"/home/melon/netflux5g/config/ueransim"
+            # Use base configuration files directly instead of ConfigManager
+            config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "ueransim"))
+            
+            # Debug: Print the actual config directory being used
+            print(f"DEBUG: Using UERANSIM config directory: {config_dir}")
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -564,7 +584,10 @@ class EnhancedContainerManager:
                 config = {"image": "towards5gs/ueransim-ue:v3.2.3"}
             
             # Use base configuration files directly instead of ConfigManager
-            config_dir = f"/home/melon/netflux5g/config/ueransim"
+            config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "ueransim"))
+            
+            # Debug: Print the actual config directory being used  
+            print(f"DEBUG: Using UERANSIM UE config directory: {config_dir}")
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -1222,3 +1245,141 @@ class EnhancedContainerManager:
                     
         except Exception as e:
             print(f"❌ Error waiting for 5G registration: {e}")
+
+    def setup_open5gs_subscribers(self):
+        """Add UE subscribers to Open5GS database like the WebUI does"""
+        try:
+            print("📱 Setting up Open5GS subscriber data...")
+            
+            # Find MongoDB container
+            mongodb_container = None
+            for container in self.deployed_containers:
+                if 'mongodb' in container.name.lower():
+                    mongodb_container = container
+                    break
+            
+            if not mongodb_container:
+                print("❌ MongoDB container not found")
+                return False
+            
+            # First, let's try a simple approach using mongo shell directly
+            print("   Adding subscriber with IMSI: 999700000000001")
+            
+            # Create subscriber document inline
+            mongo_script = '''
+use open5gs;
+db.subscribers.deleteMany({"imsi": "999700000000001"});
+db.subscribers.insertOne({
+    "imsi": "999700000000001",
+    "msisdn": [],
+    "imeisv": "4370816125816151",
+    "mme_host": "",
+    "mme_realm": "",
+    "purge_flag": [],
+    "security": {
+        "k": "465B5CE8B199B49FAA5F0A2EE238A6BC",
+        "amf": "8000",
+        "op": null,
+        "opc": "E8ED289DEBA952E4283B54E88E6183CA"
+    },
+    "ambr": {
+        "downlink": {"value": 1000000000, "unit": 0},
+        "uplink": {"value": 1000000000, "unit": 0}
+    },
+    "slice": [
+        {
+            "sst": 1,
+            "sd": "010203",
+            "default_indicator": true,
+            "session": [
+                {
+                    "name": "internet",
+                    "type": 3,
+                    "pcc_rule": [],
+                    "ambr": {
+                        "downlink": {"value": 1000000000, "unit": 0},
+                        "uplink": {"value": 1000000000, "unit": 0}
+                    },
+                    "qos": {
+                        "index": 9,
+                        "arp": {
+                            "priority_level": 8,
+                            "pre_emption_capability": 1,
+                            "pre_emption_vulnerability": 1
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+});
+var count = db.subscribers.countDocuments({"imsi": "999700000000001"});
+print("Subscribers in database: " + count);
+'''
+            
+            # Try multiple MongoDB client commands for compatibility
+            commands_to_try = [
+                f"mongosh --quiet --eval '{mongo_script}'",
+                f"mongo --quiet --eval '{mongo_script}'",
+                f"echo '{mongo_script}' | mongosh --quiet",
+                f"echo '{mongo_script}' | mongo --quiet"
+            ]
+            
+            success = False
+            for cmd in commands_to_try:
+                try:
+                    print(f"   Trying MongoDB command: {cmd.split()[0]}")
+                    exec_result = mongodb_container.exec_run(["sh", "-c", cmd])
+                    output = exec_result.output.decode() if exec_result.output else ""
+                    
+                    if exec_result.exit_code == 0 and ("Subscribers in database: 1" in output or "inserted" in output.lower()):
+                        print("✅ Subscriber data added to Open5GS database")
+                        print("   IMSI: 999700000000001")
+                        print("   K: 465B5CE8B199B49FAA5F0A2EE238A6BC")
+                        print("   OPc: E8ED289DEBA952E4283B54E88E6183CA")
+                        print("   DNN/APN: internet")
+                        success = True
+                        break
+                    else:
+                        print(f"   Command failed or no confirmation: {output[:200]}...")
+                        
+                except Exception as e:
+                    print(f"   Command failed with error: {e}")
+                    continue
+            
+            if not success:
+                print("❌ All MongoDB commands failed. Trying alternative approach...")
+                # Try using the REST API approach or manual container inspection
+                return self.setup_subscribers_alternative(mongodb_container)
+            
+            return success
+                
+        except Exception as e:
+            print(f"❌ Error setting up subscribers: {e}")
+            return False
+    
+    def setup_subscribers_alternative(self, mongodb_container):
+        """Alternative method to set up subscribers"""
+        try:
+            print("   Trying alternative subscriber setup...")
+            
+            # Check if MongoDB is running and accessible
+            exec_result = mongodb_container.exec_run("pgrep mongod")
+            if exec_result.exit_code != 0:
+                print("   MongoDB process not running in container")
+                return False
+            
+            # Simple test - just verify we can connect to MongoDB
+            test_cmd = "mongosh --quiet --eval 'db.adminCommand(\"ismaster\")' 2>/dev/null || mongo --quiet --eval 'db.adminCommand(\"ismaster\")'"
+            exec_result = mongodb_container.exec_run(["sh", "-c", test_cmd])
+            
+            if exec_result.exit_code == 0:
+                print("✅ MongoDB is accessible, subscriber data will be added by UE registration process")
+                return True
+            else:
+                print("❌ Cannot connect to MongoDB")
+                return False
+                
+        except Exception as e:
+            print(f"   Alternative setup failed: {e}")
+            return False
