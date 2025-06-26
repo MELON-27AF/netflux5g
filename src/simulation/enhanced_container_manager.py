@@ -365,9 +365,31 @@ class EnhancedContainerManager:
                     if host_port:
                         ports_dict[f"{container_port}"] = host_port
             
+            # Create proper startup command with dependencies
+            if comp_type == "nrf":
+                # NRF only needs to wait for MongoDB
+                startup_command = [
+                    "sh", "-c", 
+                    f"echo 'Waiting for MongoDB...' && "
+                    f"while ! nc -z mongodb 27017; do sleep 2; done && "
+                    f"echo 'MongoDB is ready, starting NRF...' && "
+                    f"exec {' '.join(config.get('command', ['open5gs-nrfd']))}"
+                ]
+            else:
+                # Other Open5GS services need to wait for both MongoDB and NRF
+                startup_command = [
+                    "sh", "-c", 
+                    f"echo 'Waiting for MongoDB...' && "
+                    f"while ! nc -z mongodb 27017; do sleep 2; done && "
+                    f"echo 'Waiting for NRF...' && "
+                    f"while ! nc -z nrf 7777; do sleep 2; done && "
+                    f"echo 'Dependencies ready, starting {comp_type}...' && "
+                    f"exec {' '.join(config.get('command', [f'open5gs-{comp_type}d']))}"
+                ]
+            
             container = self.client.containers.run(
                 config.get("image", "openverso/open5gs:latest"),
-                command=config.get("command", "sleep infinity"),
+                command=startup_command,
                 name=name,
                 network=self.network_name,
                 detach=True,
@@ -715,7 +737,94 @@ nrf:
         addr: nrf
         port: 7777
 """
-            # Add more configurations for other components...
+            elif comp_type == "smf":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+smf:
+    sbi:
+        addr: 0.0.0.0
+        port: 80
+    pfcp:
+        addr: 0.0.0.0
+    subnet:
+        - addr: 10.45.0.1/16
+    dns:
+        - 8.8.8.8
+        - 8.8.4.4
+
+nrf:
+    sbi:
+        addr: nrf
+        port: 7777
+"""
+            elif comp_type == "upf":
+                config_content = f"""
+logger:
+    level: info
+
+upf:
+    pfcp:
+        addr: 0.0.0.0
+    gtpu:
+        addr: 0.0.0.0
+    subnet:
+        - addr: 10.45.0.1/16
+"""
+            elif comp_type == "ausf":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+ausf:
+    sbi:
+        addr: 0.0.0.0
+        port: 80
+
+nrf:
+    sbi:
+        addr: nrf
+        port: 7777
+"""
+            elif comp_type == "udm":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+udm:
+    sbi:
+        addr: 0.0.0.0
+        port: 80
+
+nrf:
+    sbi:
+        addr: nrf
+        port: 7777
+"""
+            elif comp_type == "pcf":
+                config_content = f"""
+db_uri: mongodb://mongodb:27017/open5gs
+
+logger:
+    level: info
+
+pcf:
+    sbi:
+        addr: 0.0.0.0
+        port: 80
+
+nrf:
+    sbi:
+        addr: nrf
+        port: 7777
+"""
             else:
                 config_content = f"# Configuration for {comp_type}"
             
@@ -758,6 +867,9 @@ amfConfigs:
 
 slices:
   - sst: 1
+
+# Required field to prevent startup errors
+ignoreStreamIds: [1, 2, 3, 4]
 
 logger:
   level: warn
