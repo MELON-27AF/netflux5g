@@ -733,11 +733,11 @@ class EnhancedContainerManager:
                 memswap_limit=config.get("memswap_limit", "128m")
             )
             
-            print(f"Deployed Internet Gateway: internet-gw")
+            print(f"Deployed Internet Gateway: {container.name}")
             return container
             
         except Exception as e:
-            print(f"Error deploying Internet Gateway: {e}")
+            print(f"Error deploying internet gateway: {e}")
             return None
 
     def deploy_mongodb_standalone(self):
@@ -869,7 +869,7 @@ class EnhancedContainerManager:
                     if container != target_container:
                         target_ip = self.get_container_ip(target_container)
                         if target_ip != "unknown":
-                            exec_result = container.exec_run(f"ping -c 1 {target_ip}", timeout=5)
+                            exec_result = container.exec_run(f"ping -c 1 {target_ip}")
                             success = exec_result.exit_code == 0
                             
                             results.append({
@@ -905,7 +905,7 @@ class EnhancedContainerManager:
                 print(f"Testing end-to-end connectivity for UE: {ue_container.name}")
                 
                 # Test 1: Check if tunnel interface exists
-                exec_result = ue_container.exec_run("ip addr show uesimtun0", timeout=5)
+                exec_result = ue_container.exec_run("ip addr show uesimtun0")
                 tunnel_exists = exec_result.exit_code == 0
                 
                 results.append({
@@ -921,7 +921,7 @@ class EnhancedContainerManager:
                     # Test 2: Ping internet gateway through tunnel
                     gw_ip = self.get_container_ip_by_name("internet-gw")
                     if gw_ip != "unknown":
-                        exec_result = ue_container.exec_run(f"ping -c 2 -I uesimtun0 {gw_ip}", timeout=10)
+                        exec_result = ue_container.exec_run(f"ping -c 2 -I uesimtun0 {gw_ip}")
                         gw_ping_success = exec_result.exit_code == 0
                         
                         results.append({
@@ -934,7 +934,7 @@ class EnhancedContainerManager:
                         })
                     
                     # Test 3: Ping external DNS (8.8.8.8)
-                    exec_result = ue_container.exec_run("ping -c 2 -I uesimtun0 8.8.8.8", timeout=10)
+                    exec_result = ue_container.exec_run("ping -c 2 -I uesimtun0 8.8.8.8")
                     external_ping_success = exec_result.exit_code == 0
                     
                     results.append({
@@ -1140,7 +1140,7 @@ class EnhancedContainerManager:
                 
                 for cmd in commands:
                     try:
-                        exec_result = internet_gw.exec_run(cmd, timeout=10)
+                        exec_result = internet_gw.exec_run(cmd)
                         if exec_result.exit_code == 0:
                             print(f"✅ Internet GW: {cmd}")
                         else:
@@ -1167,7 +1167,7 @@ class EnhancedContainerManager:
                     
                     for cmd in commands:
                         try:
-                            exec_result = ue_container.exec_run(cmd, timeout=10)
+                            exec_result = ue_container.exec_run(cmd)
                             if "ip addr show uesimtun0" in cmd and exec_result.exit_code == 0:
                                 print(f"✅ UE tunnel interface found: {ue_container.name}")
                             elif "ip route add default" in cmd and exec_result.exit_code == 0:
@@ -1203,7 +1203,7 @@ class EnhancedContainerManager:
                 while attempts < max_attempts and not registered:
                     try:
                         # Check for tunnel interface creation (indicates successful registration)
-                        exec_result = ue_container.exec_run("ip addr show uesimtun0", timeout=5)
+                        exec_result = ue_container.exec_run("ip addr show uesimtun0")
                         if exec_result.exit_code == 0:
                             print(f"✅ UE {ue_container.name} registered (tunnel interface found)")
                             registered = True
