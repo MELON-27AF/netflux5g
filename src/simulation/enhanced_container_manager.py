@@ -237,6 +237,21 @@ class EnhancedContainerManager:
 
         deployed = []
 
+        # Ensure MongoDB is deployed first (required by Open5GS components)
+        mongodb_deployed = False
+        for component in components:
+            if component.component_type == 'mongodb':
+                mongodb_deployed = True
+                break
+        
+        if not mongodb_deployed:
+            # Create a virtual MongoDB component if not found
+            print("📦 MongoDB not found in components, deploying it automatically...")
+            mongodb_container = self.deploy_mongodb_standalone()
+            if mongodb_container:
+                deployed.append(mongodb_container)
+                self.deployed_containers.append(mongodb_container)
+
         # Sort components by deployment order (mongodb, nrf, then others)
         deployment_order = ['mongodb', 'nrf', 'amf', 'smf', 'upf', 'ausf', 'udm', 'pcf', 'gnb', 'ue']
         sorted_components = sorted(components, key=lambda c: 
@@ -332,6 +347,12 @@ class EnhancedContainerManager:
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
+            
+            # Add configuration file volume mount
+            import os
+            abs_config_dir = os.path.abspath(f"./config/open5gs/{name}")
+            volumes_list.append(f"{abs_config_dir}:/etc/open5gs:ro")
+            
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
                     volumes_list.append(f"{host_path}:{container_path}")
@@ -404,6 +425,12 @@ class EnhancedContainerManager:
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
+            
+            # Add configuration file volume mount
+            import os
+            abs_config_dir = os.path.abspath(f"./config/ueransim/{name}")
+            volumes_list.append(f"{abs_config_dir}:/etc/ueransim:ro")
+            
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
                     volumes_list.append(f"{host_path}:{container_path}")
@@ -468,6 +495,12 @@ class EnhancedContainerManager:
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
             volumes_list = []
+            
+            # Add configuration file volume mount
+            import os
+            abs_config_dir = os.path.abspath(f"./config/ueransim/{name}")
+            volumes_list.append(f"{abs_config_dir}:/etc/ueransim:ro")
+            
             if volumes_config:
                 for host_path, container_path in volumes_config.items():
                     volumes_list.append(f"{host_path}:{container_path}")
@@ -590,6 +623,40 @@ class EnhancedContainerManager:
             
         except Exception as e:
             print(f"Error deploying MongoDB: {e}")
+            return None
+
+    def deploy_mongodb_standalone(self):
+        """Deploy MongoDB as a standalone service for Open5GS"""
+        try:
+            name = "mongodb"
+            config = self.open5gs_config["mongodb"]
+            
+            # Prepare ports correctly for Docker
+            ports_config = config.get("ports", {})
+            ports_dict = {}
+            if ports_config:
+                for container_port, host_port in ports_config.items():
+                    if host_port:
+                        ports_dict[f"{container_port}"] = host_port
+            
+            container = self.client.containers.run(
+                config.get("image", "mongo:4.4"),
+                name=name,
+                network=self.network_name,
+                detach=True,
+                remove=False,
+                environment=config.get("environment", {}),
+                ports=ports_dict if ports_dict else None,
+                restart_policy={"Name": "no"},
+                mem_limit=config.get("mem_limit", "256m"),
+                memswap_limit=config.get("memswap_limit", "256m")
+            )
+            
+            print(f"Deployed standalone MongoDB: {name}")
+            return container
+            
+        except Exception as e:
+            print(f"Error deploying standalone MongoDB: {e}")
             return None
 
     def create_open5gs_config(self, comp_type, name, properties=None):
