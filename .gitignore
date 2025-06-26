@@ -1,0 +1,34 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Log files
+*.log
+netflux5g.log
+
+# Configuration directories (generated)
+config/open5gs/
+config/ueransim/
+src/config/
+
+# Virtual environment
+venv/
+env/
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes and data
+data/
+volumes/
