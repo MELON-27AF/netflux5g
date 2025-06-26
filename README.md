@@ -6,9 +6,11 @@ NetFlux5G adalah tools simulasi jaringan 5G yang berjalan menggunakan container 
 
 - **Desain Topologi Visual**: Drag-and-drop interface untuk membuat topologi jaringan 5G
 - **Container-Based Simulation**: Menggunakan Docker container untuk menjalankan komponen 5G nyata
+- **YAML Configuration System**: Sistem konfigurasi berbasis YAML untuk setiap komponen 5G
 - **Real-time Terminal Access**: Akses terminal langsung ke setiap container yang berjalan
 - **5G Core Components**: Support untuk Open5GS (AMF, SMF, UPF, NRF, dll.) menggunakan openverso/open5gs:latest images
 - **RAN Simulation**: UERANSIM untuk gNodeB dan UE simulation menggunakan openverso/ueransim:latest images
+- **Component Customization**: Kustomisasi mudah untuk setiap komponen 5G dengan properties
 - **Network Testing**: Built-in connectivity testing dan monitoring
 - **Export Capabilities**: Export ke Docker Compose dan Mininet
 
@@ -109,6 +111,46 @@ python main.py
 - **Containers**: Status detail semua container
 - **Connectivity**: Hasil ping test antar komponen
 - **Performance**: Metrics simulasi (latency, throughput, dll.)
+
+## 📄 Sistem Konfigurasi YAML
+
+NetFlux5G menggunakan sistem konfigurasi berbasis YAML yang memungkinkan kustomisasi mudah untuk setiap komponen 5G.
+
+### Struktur Konfigurasi
+
+```
+config/
+├── open5gs/           # Template konfigurasi Open5GS
+│   ├── nrf.yaml       # Network Repository Function
+│   ├── amf.yaml       # Access and Mobility Management Function
+│   ├── smf.yaml       # Session Management Function
+│   ├── upf.yaml       # User Plane Function
+│   ├── ausf.yaml      # Authentication Server Function
+│   ├── udm.yaml       # Unified Data Management
+│   └── pcf.yaml       # Policy Control Function
+├── ueransim/          # Template konfigurasi UERANSIM
+│   ├── gnb.yaml       # Next Generation NodeB
+│   └── ue.yaml        # User Equipment
+└── instances/         # Konfigurasi instance yang dihasilkan otomatis
+```
+
+### Fitur Konfigurasi
+
+- **Template-Based**: Setiap komponen memiliki template konfigurasi YAML
+- **Instance-Specific**: Konfigurasi otomatis disesuaikan per instance
+- **Property Customization**: Mudah mengubah parameter seperti MCC/MNC, IP, dll.
+- **Validation**: Validasi YAML otomatis untuk mencegah error
+- **Auto-Cleanup**: Pembersihan konfigurasi otomatis saat container dihapus
+
+### Testing Konfigurasi
+
+```bash
+# Test sistem konfigurasi
+python test_config_system.py
+
+# Lihat status implementasi lengkap
+python config_implementation_summary.py
+```
 
 ## 🏗️ Arsitektur Sistem
 
