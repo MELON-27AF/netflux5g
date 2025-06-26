@@ -64,6 +64,10 @@ class NetworkSimulator:
             # Get container status
             container_status = self.container_manager.get_container_status()
             
+            # Automatically show terminal dialog for monitoring
+            print("Opening container management terminal...")
+            self.show_terminal_dialog()
+            
             # Simulate network traffic and performance (existing logic)
             simulation_data = self._simulate_network(components, connections)
             

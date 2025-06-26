@@ -25,6 +25,9 @@ upf:
     - addr: 10.45.0.1/16
       dnn: internet
       dev: ogstun
+    - addr: 192.168.0.1/24
+      dnn: internet2
+      dev: ogstun2
 
   # Enable NAT for internet access
   dev: ogstun
