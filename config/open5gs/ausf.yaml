@@ -8,7 +8,7 @@ logger:
 
 ausf:
   sbi:
-    - addr: 0.0.0.0
+    - addr: ausf-test
       port: 7779
   sbi_client:
     nrf:
