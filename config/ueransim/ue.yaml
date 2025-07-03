@@ -31,7 +31,7 @@ imeiSv: "4370816125816151"
 
 # List of gNB IP addresses for Radio Link Simulation
 gnbSearchList:
-  - 0.0.0.0 # Search for gNB on all interfaces in the network
+  - 10.45.0.11 # IP address of gnb-test container
 
 # UAC Access Identities Configuration
 uacAic:
