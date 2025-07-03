@@ -11,9 +11,9 @@ idLength: 32 # NR gNB ID length in bits [22...32]
 tac: 1 # Tracking Area Code
 
 # IP configuration for gNB
-linkIp: eth0 # gNB's network interface for Radio Link Simulation
-ngapIp: eth0 # gNB's network interface for N2 Interface
-gtpIp: eth0 # gNB's network interface for N3 Interface
+linkIp: 127.0.0.1 # gNB's local IP address for Radio Link Simulation
+ngapIp: 127.0.0.1 # gNB's local IP address for N2 Interface
+gtpIp: 127.0.0.1 # gNB's local IP address for N3 Interface
 
 # List of AMF configurations
 amfConfigs:
