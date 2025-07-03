@@ -10,35 +10,6 @@ pcf:
   sbi:
     - addr: 0.0.0.0
       port: 7781
-  sbi_client:
-    nrf:
-      - uri: http://nrf-test:7777
-
-  metrics:
-    - addr: 0.0.0.0
-      port: 9090
-
-  # Policy configuration
-  policy:
-    # Default policy rules
-    default_charging_method: offline
-
-    # QoS policy
-    qos:
-      default_5qi: 9
-      guaranteed_bit_rate:
-        uplink: 1000000 # 1 Mbps
-        downlink: 1000000 # 1 Mbps
-
-    # Session management policy
-    session:
-      default_session_ambr:
-        uplink: 1000000000 # 1 Gbps
-        downlink: 1000000000 # 1 Gbps
-
-  # Notification configuration
-  notification:
-    enabled: true
 
 nrf:
   sbi:
