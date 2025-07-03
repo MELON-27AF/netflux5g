@@ -95,6 +95,9 @@ class EnhancedContainerManager:
                 "command": ["open5gs-ausfd", "-c", "/etc/open5gs/ausf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {},
+                "environment": {
+                    "DB_URI": "mongodb://mongodb:27017/open5gs"
+                },
                 "mem_limit": "128m",
                 "memswap_limit": "128m"
             },
@@ -103,6 +106,9 @@ class EnhancedContainerManager:
                 "command": ["open5gs-udmd", "-c", "/etc/open5gs/udm.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {},
+                "environment": {
+                    "DB_URI": "mongodb://mongodb:27017/open5gs"
+                },
                 "mem_limit": "128m",
                 "memswap_limit": "128m"
             },
@@ -111,6 +117,9 @@ class EnhancedContainerManager:
                 "command": ["open5gs-pcfd", "-c", "/etc/open5gs/pcf.yaml"],
                 "depends_on": ["nrf"],
                 "volumes": {},
+                "environment": {
+                    "DB_URI": "mongodb://mongodb:27017/open5gs"
+                },
                 "mem_limit": "128m",
                 "memswap_limit": "128m"
             }
