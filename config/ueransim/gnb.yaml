@@ -25,6 +25,9 @@ slices:
   - sst: 1 # Slice/Service Type
     sd: 0x010203 # Slice Differentiator (optional)
 
+# Ignore stream IDs (leave empty if not needed)
+ignoreStreamIds: []
+
 # Logging configuration
 logger:
   level: warn # Log level: trace, debug, info, warn, error, fatal
