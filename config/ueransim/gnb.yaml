@@ -25,9 +25,6 @@ slices:
   - sst: 1 # Slice/Service Type
     sd: 0x010203 # Slice Differentiator (optional)
 
-# Stream IDs to ignore during SCTP connection (required by UERANSIM v3.2.3)
-ignoreStreamIds: []
-
 # Logging configuration
 logger:
   level: warn # Log level: trace, debug, info, warn, error, fatal

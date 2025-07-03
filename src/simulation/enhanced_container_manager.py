@@ -5,6 +5,7 @@ import os
 import time
 import json
 import sys
+import docker
 
 # Add the src directory to the path to import our modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -636,6 +637,18 @@ class EnhancedContainerManager:
             
             name = properties.get("name", f"router_{comp_id}")
             
+            # Check if container with this name already exists
+            try:
+                existing_container = self.client.containers.get(name)
+                if existing_container.status == 'running':
+                    print(f"Router {name} already exists and is running")
+                    return existing_container
+                else:
+                    print(f"Removing stopped router container: {name}")
+                    existing_container.remove()
+            except docker.errors.NotFound:
+                pass  # Container doesn't exist, proceed with deployment
+            
             config = self.network_config["router"]
             
             container = self.client.containers.run(
@@ -1245,10 +1258,10 @@ class EnhancedContainerManager:
             # First, let's try a simple approach using mongo shell directly
             print("   Adding subscriber with IMSI: 999700000000001")
             
-            # Create subscriber document inline
-            mongo_script = '''
-use open5gs;
-db.subscribers.deleteMany({"imsi": "999700000000001"});
+            # Create subscriber document with proper JSON syntax
+            mongo_script = """
+use open5gs
+db.subscribers.deleteMany({"imsi": "999700000000001"})
 db.subscribers.insertOne({
     "imsi": "999700000000001",
     "msisdn": [],
@@ -1263,53 +1276,81 @@ db.subscribers.insertOne({
         "opc": "E8ED289DEBA952E4283B54E88E6183CA"
     },
     "ambr": {
-        "downlink": {"value": 1000000000, "unit": 0},
-        "uplink": {"value": 1000000000, "unit": 0}
+        "downlink": {"value": NumberLong(1000000000), "unit": NumberInt(0)},
+        "uplink": {"value": NumberLong(1000000000), "unit": NumberInt(0)}
     },
     "slice": [
         {
-            "sst": 1,
+            "sst": NumberInt(1),
             "sd": "010203",
             "default_indicator": true,
             "session": [
                 {
                     "name": "internet",
-                    "type": 3,
+                    "type": NumberInt(3),
                     "pcc_rule": [],
                     "ambr": {
-                        "downlink": {"value": 1000000000, "unit": 0},
-                        "uplink": {"value": 1000000000, "unit": 0}
+                        "downlink": {"value": NumberLong(1000000000), "unit": NumberInt(0)},
+                        "uplink": {"value": NumberLong(1000000000), "unit": NumberInt(0)}
                     },
                     "qos": {
-                        "index": 9,
+                        "index": NumberInt(9),
                         "arp": {
-                            "priority_level": 8,
-                            "pre_emption_capability": 1,
-                            "pre_emption_vulnerability": 1
+                            "priority_level": NumberInt(8),
+                            "pre_emption_capability": NumberInt(1),
+                            "pre_emption_vulnerability": NumberInt(1)
                         }
                     }
                 }
             ]
         }
     ]
-});
-var count = db.subscribers.countDocuments({"imsi": "999700000000001"});
-print("Subscribers in database: " + count);
-'''
+})
+var count = db.subscribers.countDocuments({"imsi": "999700000000001"})
+print("Subscribers in database: " + count)
+"""
             
-            # Try multiple MongoDB client commands for compatibility
+            # Try multiple MongoDB client commands for compatibility  
+            # First try a simple insertion command
+            simple_script = """
+use open5gs
+db.subscribers.deleteMany({"imsi": "999700000000001"})
+db.subscribers.insertOne({
+    "imsi": "999700000000001",
+    "security": {
+        "k": "465B5CE8B199B49FAA5F0A2EE238A6BC",
+        "amf": "8000",
+        "opc": "E8ED289DEBA952E4283B54E88E6183CA"
+    },
+    "slice": [{
+        "sst": 1,
+        "default_indicator": true,
+        "session": [{
+            "name": "internet",
+            "type": 3
+        }]
+    }]
+})
+db.subscribers.countDocuments({"imsi": "999700000000001"})
+"""
+            
             commands_to_try = [
-                f"mongosh --quiet --eval '{mongo_script}'",
-                f"mongo --quiet --eval '{mongo_script}'",
-                f"echo '{mongo_script}' | mongosh --quiet",
-                f"echo '{mongo_script}' | mongo --quiet"
+                ["mongosh", "--quiet", "--eval", simple_script],
+                ["mongo", "--quiet", "--eval", simple_script],
+                ["sh", "-c", f"echo '{simple_script}' | mongosh --quiet"],
+                ["sh", "-c", f"echo '{simple_script}' | mongo --quiet"]
             ]
             
             success = False
             for cmd in commands_to_try:
                 try:
-                    print(f"   Trying MongoDB command: {cmd.split()[0]}")
-                    exec_result = mongodb_container.exec_run(["sh", "-c", cmd])
+                    if isinstance(cmd, list):
+                        print(f"   Trying MongoDB command: {cmd[0]}")
+                        exec_result = mongodb_container.exec_run(cmd)
+                    else:
+                        print(f"   Trying MongoDB command: {cmd.split()[0]}")
+                        exec_result = mongodb_container.exec_run(["sh", "-c", cmd])
+                    
                     output = exec_result.output.decode() if exec_result.output else ""
                     
                     if exec_result.exit_code == 0 and ("Subscribers in database: 1" in output or "inserted" in output.lower()):

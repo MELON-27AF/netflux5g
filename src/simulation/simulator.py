@@ -400,7 +400,7 @@ class NetworkSimulator:
         })
         
         router.set_properties({
-            "name": "internet-gw",
+            "name": "core-router",
             "openflow": True
         })
         

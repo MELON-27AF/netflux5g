@@ -6,19 +6,16 @@ logger:
 
 upf:
   pfcp:
-    server:
-      - address: 0.0.0.0
-        port: 8805
+    - addr: 0.0.0.0
+      port: 8805
 
   gtpu:
-    server:
-      - address: 0.0.0.0
-        port: 2152
+    - addr: 0.0.0.0
+      port: 2152
 
   metrics:
-    server:
-      - address: 0.0.0.0
-        port: 9090
+    - addr: 0.0.0.0
+      port: 9090
 
   subnet:
     - addr: 10.45.0.1/16
