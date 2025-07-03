@@ -12,7 +12,7 @@ smf:
       port: 7782
   sbi_client:
     nrf:
-      - uri: http://nrf:7777
+      - uri: http://nrf-test:7777
 
   pfcp:
     - addr: 0.0.0.0

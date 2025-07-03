@@ -17,16 +17,13 @@ gtpIp: 0.0.0.0 # gNB's local IP address for N3 Interface (Use 0.0.0.0 to bind to
 
 # List of AMF configurations
 amfConfigs:
-  - address: amf # AMF IP address or hostname
+  - address: amf-test # AMF IP address or hostname
     port: 38412 # AMF port for NGAP
 
 # List of supported S-NSSAIs by this gNB
 slices:
   - sst: 1 # Slice/Service Type
     sd: 0x010203 # Slice Differentiator (optional)
-
-# Ignore stream IDs (leave empty if not needed)
-ignoreStreamIds: []
 
 # Logging configuration
 logger:
