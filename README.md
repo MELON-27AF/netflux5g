@@ -1,38 +1,42 @@
 # NetFlux5G - 5G Network Simulation Tool
 
-NetFlux5G adalah tools simulasi jaringan 5G yang berjalan menggunakan container Docker, mirip dengan cara kerja MiniEdit dari Containernet. Aplikasi ini memungkinkan Anda mendesain, men-deploy, dan mengelola topologi jaringan 5G dengan interface grafis yang mudah digunakan.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
 
-## 🚀 Fitur Utama
+NetFlux5G is a comprehensive 5G network simulation tool that runs on Docker containers, similar to MiniEdit from Containernet. It provides a graphical interface for designing, deploying, and managing 5G network topologies with real network functions.
 
-- **Desain Topologi Visual**: Drag-and-drop interface untuk membuat topologi jaringan 5G
-- **Container-Based Simulation**: Menggunakan Docker container untuk menjalankan komponen 5G nyata
-- **YAML Configuration System**: Sistem konfigurasi berbasis YAML untuk setiap komponen 5G
-- **Real-time Terminal Access**: Akses terminal langsung ke setiap container yang berjalan
-- **5G Core Components**: Support untuk Open5GS (AMF, SMF, UPF, NRF, dll.) menggunakan openverso/open5gs:latest images
-- **RAN Simulation**: UERANSIM untuk gNodeB dan UE simulation menggunakan openverso/ueransim:latest images
-- **Component Customization**: Kustomisasi mudah untuk setiap komponen 5G dengan properties
-- **Network Testing**: Built-in connectivity testing dan monitoring
-- **Export Capabilities**: Export ke Docker Compose dan Mininet
+## ✨ Key Features
 
-## 📋 Persyaratan Sistem
+- **Visual Topology Design**: Drag-and-drop interface for creating 5G network topologies
+- **Container-Based Simulation**: Uses Docker containers to run real 5G network components
+- **YAML Configuration System**: Flexible configuration management for all 5G components
+- **Real-time Terminal Access**: Direct terminal access to running containers
+- **5G Core Components**: Support for Open5GS (AMF, SMF, UPF, NRF, etc.) using openverso/open5gs:latest images
+- **RAN Simulation**: UERANSIM for gNodeB and UE simulation using openverso/ueransim:latest images
+- **Component Customization**: Easy customization of 5G components with properties
+- **Network Testing**: Built-in connectivity testing and monitoring
+- **Export Capabilities**: Export to Docker Compose and Mininet
 
-### Software yang Diperlukan:
-- **Windows 10/11** dengan WSL2 atau **Linux**
-- **Python 3.8+**
-- **Docker Desktop** (Windows) atau **Docker Engine** (Linux)
-- **Git** untuk cloning repository
+## 📋 Requirements
 
-### Dependency Python:
+### System Requirements
+- **Operating System**: Windows 10/11 with WSL2, Linux, or macOS
+- **Python**: 3.8 or higher
+- **Docker**: Docker Desktop (Windows/macOS) or Docker Engine (Linux)
+- **Git**: For cloning the repository
+
+### Python Dependencies
 - PyQt5 (GUI framework)
 - Docker Python SDK
-- PyYAML untuk konfigurasi
-- Requests untuk HTTP communication
+- PyYAML for configuration
+- Requests for HTTP communication
 
-## 🔧 Instalasi
+## 🚀 Quick Start
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-repo/netflux5g.git
+git clone https://github.com/netflux5g/netflux5g.git
 cd netflux5g
 ```
 
@@ -41,158 +45,119 @@ cd netflux5g
 pip install -r requirements.txt
 ```
 
-### 3. Pastikan Docker Berjalan
+### 3. Pull Docker Images
 ```bash
-docker --version
-docker info
+# Windows
+.\scripts\pull_images.ps1
+
+# Linux/macOS
+chmod +x scripts/pull_images.sh
+./scripts/pull_images.sh
 ```
 
-### 4. Jalankan Aplikasi
-
-**Windows:**
+### 4. Run Application
 ```bash
-run_netflux5g.bat
-```
+# Windows
+.\scripts\run_netflux5g.bat
 
-**Linux/Mac:**
-```bash
-chmod +x netflux5g.sh
-./netflux5g.sh
-```
+# Linux/macOS
+chmod +x scripts/netflux5g.sh
+./scripts/netflux5g.sh
 
-Atau jalankan langsung:
-```bash
+# Or run directly
 cd src
 python main.py
 ```
 
-## 🎯 Cara Menggunakan
+## 📖 Usage Guide
 
-### 1. Membuat Topologi 5G
+### Creating a 5G Network Topology
 
-1. **Buka NetFlux5G**
-2. **Drag komponen** dari panel kiri ke canvas:
-   - **5G Core**: AMF, SMF, UPF, NRF, PCF, UDM, AUSF
-   - **RAN**: gNodeB, UE (User Equipment)
+1. **Launch NetFlux5G**
+2. **Drag components** from the left panel to the canvas:
+   - **5G Core Components**: AMF, SMF, UPF, NRF, PCF, UDM, AUSF
+   - **RAN Components**: gNodeB, UE (User Equipment)
    - **Infrastructure**: Switch, Router, Host
-3. **Hubungkan komponen** dengan drag dari satu komponen ke yang lain
-4. **Set properties** komponen dengan klik kanan → Properties
+3. **Connect components** by dragging from one component to another
+4. **Configure properties** by right-clicking components → Properties
 
-### 2. Menjalankan Simulasi
+### Running Simulations
 
-1. **Klik "Run Simulation" (F5)** atau menu Simulation → Run Simulation
-2. **Tunggu deployment container** - aplikasi akan:
-   - Membuat Docker network khusus untuk 5G
-   - Deploy container untuk setiap komponen
-   - Mengkonfigurasi konektivitas antar container
-3. **Terminal Dialog otomatis terbuka** menampilkan:
-   - Daftar container yang berjalan
-   - Status dan IP address masing-masing
-   - Interface untuk command execution
+1. **Click "Run Simulation" (F5)** or menu Simulation → Run Simulation
+2. **Wait for container deployment** - the application will:
+   - Create a dedicated Docker network for 5G
+   - Deploy containers for each component
+   - Configure inter-container connectivity
+3. **Terminal Dialog opens automatically** showing:
+   - List of running containers
+   - Status and IP addresses
+   - Interface for command execution
 
-### 3. Menggunakan Terminal Container
+### Testing 5G Connectivity
 
-**Terminal Dialog menyediakan:**
-- **Container List**: Daftar semua container dengan status dan IP
-- **Command Execution**: Jalankan command di container tertentu
-- **Ping Tests**: Test konektivitas antar container
-- **Network Analysis**: Show routes, interfaces, dll.
+**Basic connectivity test:**
 
-**Quick Actions:**
-- **Double-click container** → Buka terminal di Windows Command Prompt
-- **Execute Command** → Jalankan command dan lihat output
-- **Ping All** → Test konektivitas komprehensif
-- **Show Routes/Interfaces** → Network troubleshooting
+1. Deploy a complete 5G topology (Core + gNB + UE)
+2. Use terminal to check UE registration:
+   ```bash
+   # In UE container
+   cat /proc/net/dev
+   
+   # Check if TUN interface is created
+   ifconfig uesimtun0
+   ```
 
-### 4. Monitoring dan Testing
+3. **Test internet connectivity through 5G:**
+   ```bash
+   # In UE container, ping through TUN interface
+   ping -I uesimtun0 8.8.8.8
+   ```
 
-**Simulation Results Window menampilkan:**
-- **Summary**: Statistik jaringan dan deployment
-- **Containers**: Status detail semua container
-- **Connectivity**: Hasil ping test antar komponen
-- **Performance**: Metrics simulasi (latency, throughput, dll.)
+## 🏗️ Project Structure
 
-## 📄 Sistem Konfigurasi YAML
+```
+netflux5g/
+├── src/                    # Main application source code
+│   ├── main.py            # Application entry point
+│   ├── gui/               # GUI components
+│   ├── models/            # Data models and network components
+│   ├── simulation/        # Container management and simulation logic
+│   ├── export/            # Export functionality
+│   ├── utils/             # Utility functions
+│   └── assets/            # Icons and images
+├── config/                # Configuration templates
+│   └── templates/         # Docker Compose and component templates
+├── scripts/               # Utility scripts
+├── docs/                  # Documentation
+├── examples/              # Example topologies and tutorials
+├── requirements.txt       # Python dependencies
+├── setup.py              # Package setup configuration
+└── README.md             # This file
+```
 
-NetFlux5G menggunakan sistem konfigurasi berbasis YAML yang memungkinkan kustomisasi mudah untuk setiap komponen 5G.
+## 🔧 Configuration System
 
-### Struktur Konfigurasi
+NetFlux5G uses a YAML-based configuration system for flexible component customization:
 
+### Configuration Structure
 ```
 config/
-├── open5gs/           # Template konfigurasi Open5GS
-│   ├── nrf.yaml       # Network Repository Function
-│   ├── amf.yaml       # Access and Mobility Management Function
-│   ├── smf.yaml       # Session Management Function
-│   ├── upf.yaml       # User Plane Function
-│   ├── ausf.yaml      # Authentication Server Function
-│   ├── udm.yaml       # Unified Data Management
-│   └── pcf.yaml       # Policy Control Function
-├── ueransim/          # Template konfigurasi UERANSIM
-│   ├── gnb.yaml       # Next Generation NodeB
-│   └── ue.yaml        # User Equipment
-└── instances/         # Konfigurasi instance yang dihasilkan otomatis
+├── templates/
+│   ├── open5gs/          # Open5GS configuration templates
+│   └── ueransim/         # UERANSIM configuration templates
+└── instances/            # Generated instance configurations
 ```
 
-### Fitur Konfigurasi
-
-- **Template-Based**: Setiap komponen memiliki template konfigurasi YAML
-- **Instance-Specific**: Konfigurasi otomatis disesuaikan per instance
-- **Property Customization**: Mudah mengubah parameter seperti MCC/MNC, IP, dll.
-- **Validation**: Validasi YAML otomatis untuk mencegah error
-- **Auto-Cleanup**: Pembersihan konfigurasi otomatis saat container dihapus
-
-### Testing Konfigurasi
-
-```bash
-# Test sistem konfigurasi
-python test_config_system.py
-
-# Lihat status implementasi lengkap
-python config_implementation_summary.py
-```
-
-## 🏗️ Arsitektur Sistem
-
-### Komponen Utama:
-
-1. **GUI Layer** (PyQt5):
-   - `MainWindow`: Interface utama aplikasi
-   - `NetworkCanvas`: Canvas untuk menggambar topologi
-   - `TerminalDialog`: Interface akses container terminal
-   - `ComponentPanel`: Panel komponen 5G
-
-2. **Simulation Engine**:
-   - `NetworkSimulator`: Orchestrator simulasi
-   - `EnhancedContainerManager`: Manager Docker container
-   - `ComponentFactory`: Factory untuk membuat komponen
-
-3. **Container Infrastructure**:
-   - **Open5GS containers**: Core network functions
-   - **UERANSIM containers**: gNB dan UE simulation
-   - **Custom Docker network**: Isolated 5G network
-
-### Workflow Simulasi:
-
-```
-1. User Design Topology (GUI)
-   ↓
-2. Parse Components & Connections (Simulator)
-   ↓
-3. Generate Configurations (ConfigManager)
-   ↓
-4. Deploy Docker Containers (ContainerManager)
-   ↓
-5. Setup Network & Connectivity
-   ↓
-6. Open Terminal Access (TerminalDialog)
-   ↓
-7. Monitor & Test (ResultsDialog)
-```
+### Features
+- **Template-Based**: Each component has YAML configuration templates
+- **Instance-Specific**: Automatic configuration customization per instance
+- **Property Customization**: Easy parameter modification (MCC/MNC, IP, etc.)
+- **Validation**: Automatic YAML validation to prevent errors
+- **Auto-Cleanup**: Automatic configuration cleanup when containers are removed
 
 ## 🔍 Troubleshooting
 
-### Container Deployment Issues:
+### Docker Issues
 ```bash
 # Check Docker status
 docker info
@@ -200,15 +165,12 @@ docker info
 # Check available images
 docker images
 
-# Check networks
-docker network ls
-
 # Manual cleanup if needed
 docker container prune
 docker network prune
 ```
 
-### Python Dependencies:
+### Python Dependencies
 ```bash
 # Reinstall dependencies
 pip install --upgrade -r requirements.txt
@@ -217,75 +179,64 @@ pip install --upgrade -r requirements.txt
 python -c "from PyQt5.QtWidgets import QApplication; print('PyQt5 OK')"
 ```
 
-### Access Issues:
-- Pastikan Docker Desktop berjalan (Windows)
-- Pastikan user dalam group docker (Linux)
+### Common Issues
+- Ensure Docker Desktop is running (Windows)
+- Ensure user is in docker group (Linux)
 - Check firewall/antivirus blocking Docker
 
-## 🧪 Testing 5G Components
+## 🧪 Testing
 
-### Testing Open5GS Core:
+### Run Tests
 ```bash
-# Dalam container AMF
-curl -X GET http://nrf:7777/nnrf-nfm/v1/nf-instances
+# Run all tests
+python -m pytest
 
-# Test database connection
-mongosh mongodb://mongodb:27017/open5gs
+# Run specific test modules
+python -m pytest tests/test_simulation.py
 ```
 
-### Testing UERANSIM:
+### Manual Testing
 ```bash
-# Dalam container gNB
-ping amf
+# Test Docker connectivity
+docker run hello-world
 
-# Check gNB status
-ps aux | grep nr-gnb
-
-# Dalam container UE
-ping google.com  # Test internet via 5G
+# Test 5G image availability
+docker pull openverso/open5gs:latest
+docker pull openverso/ueransim:latest
 ```
 
-## 📁 Struktur Project
+## 📚 Documentation
 
-```
-netflux5g/
-├── src/
-│   ├── main.py                 # Entry point aplikasi
-│   ├── gui/                    # GUI components
-│   │   ├── main_window.py      # Main application window
-│   │   ├── canvas.py          # Network topology canvas
-│   │   ├── terminal_dialog.py  # Container terminal interface
-│   │   └── ...
-│   ├── simulation/            # Simulation engine
-│   │   ├── simulator.py       # Main simulator
-│   │   ├── enhanced_container_manager.py  # Docker management
-│   │   └── ...
-│   ├── models/               # Data models
-│   └── utils/               # Utility functions
-├── config/                  # Generated configurations
-├── requirements.txt        # Python dependencies
-├── run_netflux5g.bat      # Windows startup script
-└── README.md              # Documentation
-```
+- [User Guide](docs/user-guide.md)
+- [API Reference](docs/api-reference.md)
+- [Configuration Guide](docs/configuration.md)
+- [Examples](examples/)
 
 ## 🤝 Contributing
 
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Create Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - lihat file LICENSE untuk detail.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🙏 Acknowledgments
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/netflux5g/issues)
-- **Documentation**: [Wiki](https://github.com/your-repo/netflux5g/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/netflux5g/discussions)
+- [Open5GS](https://open5gs.org/) for the 5G Core Network implementation
+- [UERANSIM](https://github.com/aligungr/UERANSIM) for the 5G RAN simulator
+- [OpenVerso](https://openverso.org/) for providing Docker images
+- PyQt5 for the GUI framework
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/netflux5g/netflux5g/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/netflux5g/netflux5g/discussions)
+- **Email**: contact@netflux5g.dev
 
 ---
 
-**NetFlux5G** - Bringing 5G Network Simulation to Your Desktop! 🚀📡
+**Made with ❤️ for the 5G research community**

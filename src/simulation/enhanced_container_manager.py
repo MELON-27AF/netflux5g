@@ -360,12 +360,9 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
-            # Debug logging
-            print(f"DEBUG: Deploying {comp_type}, properties type: {type(properties)}, value: {properties}")
-            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
-                print(f"WARNING: Properties was {type(properties)}, converting to dict")
+                logging.warning(f"Properties was {type(properties)}, converting to dict")
                 properties = {}
             
             # Store a copy of properties to prevent accidental overwriting
@@ -386,9 +383,6 @@ class EnhancedContainerManager:
             
             # Use base configuration files directly instead of ConfigManager
             config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "open5gs"))
-            
-            # Debug: Print the actual config directory being used
-            print(f"DEBUG: Using config directory: {config_dir}")
             
             # Deploy container
             # Prepare volumes correctly for Docker
@@ -481,12 +475,9 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
-            # Debug logging
-            print(f"DEBUG: Deploying gNB, properties type: {type(properties)}, value: {properties}")
-            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
-                print(f"WARNING: gNB properties was {type(properties)}, converting to dict")
+                logging.warning(f"gNB properties was {type(properties)}, converting to dict")
                 properties = {}
             
             # Store a copy of properties to prevent accidental overwriting
@@ -498,14 +489,11 @@ class EnhancedContainerManager:
             
             # Ensure config is a dictionary (defensive programming)
             if not isinstance(config, dict):
-                print(f"gNB config is not a dictionary: {type(config)}")
+                logging.warning(f"gNB config is not a dictionary: {type(config)}")
                 config = {"image": "towards5gs/ueransim-gnb:v3.2.3"}
             
             # Use base configuration files directly instead of ConfigManager
             config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "ueransim"))
-            
-            # Debug: Print the actual config directory being used
-            print(f"DEBUG: Using UERANSIM config directory: {config_dir}")
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -559,12 +547,9 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
-            # Debug logging
-            print(f"DEBUG: Deploying UE, properties type: {type(properties)}, value: {properties}")
-            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
-                print(f"WARNING: UE properties was {type(properties)}, converting to dict")
+                logging.warning(f"UE properties was {type(properties)}, converting to dict")
                 properties = {}
             
             # Store a copy of properties to prevent accidental overwriting
@@ -576,14 +561,11 @@ class EnhancedContainerManager:
             
             # Ensure config is a dictionary (defensive programming)
             if not isinstance(config, dict):
-                print(f"UE config is not a dictionary: {type(config)}")
+                logging.warning(f"UE config is not a dictionary: {type(config)}")
                 config = {"image": "towards5gs/ueransim-ue:v3.2.3"}
             
             # Use base configuration files directly instead of ConfigManager
             config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "ueransim"))
-            
-            # Debug: Print the actual config directory being used  
-            print(f"DEBUG: Using UERANSIM UE config directory: {config_dir}")
             
             # Prepare volumes correctly for Docker
             volumes_config = config.get("volumes", {})
@@ -686,12 +668,9 @@ class EnhancedContainerManager:
             properties = getattr(component, 'properties', {})
             comp_id = getattr(component, 'component_id', id(component))
             
-            # Debug logging
-            print(f"DEBUG: Deploying mongodb, properties type: {type(properties)}, value: {properties}")
-            
             # Ensure properties is a dictionary
             if not isinstance(properties, dict):
-                print(f"WARNING: MongoDB properties was {type(properties)}, converting to dict")
+                logging.warning(f"MongoDB properties was {type(properties)}, converting to dict")
                 properties = {}
             
             # Store a copy of properties to prevent accidental overwriting
@@ -703,7 +682,7 @@ class EnhancedContainerManager:
             
             # Ensure config is a dictionary (defensive programming)
             if not isinstance(config, dict):
-                print(f"MongoDB config is not a dictionary: {type(config)}")
+                logging.warning(f"MongoDB config is not a dictionary: {type(config)}")
                 config = {"image": "mongo:4.4"}
             
             # Prepare ports correctly for Docker

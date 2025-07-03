@@ -1,0 +1,18 @@
+include README.md
+include LICENSE
+include requirements.txt
+include production.cfg
+include PRODUCTION_CHECKLIST.md
+include PRODUCTION_DEPLOYMENT.md
+include scripts/*
+recursive-include src/assets *
+recursive-include config/templates *
+recursive-include docs *
+recursive-include examples *
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.log
+global-exclude *_NEW.md
+global-exclude *.tmp
+global-exclude *.bak

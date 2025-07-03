@@ -31,9 +31,6 @@ class ComponentFactory:
         current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         base_icon_path = os.path.join(current_dir, "src", "assets", "icons")
         
-        # Debug print to see where the app is looking for icons
-        print(f"Icons directory: {base_icon_path}")
-        
         # Alternative direct path if above doesn't work
         # base_icon_path = os.path.join(current_dir, "assets", "icons")
         

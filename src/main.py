@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 
 # Setup logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('netflux5g.log'),
