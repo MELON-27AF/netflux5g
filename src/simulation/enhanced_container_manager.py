@@ -445,6 +445,7 @@ class EnhancedContainerManager:
             container = self.client.containers.run(
                 config.get("image", "openverso/open5gs:latest"),
                 command=startup_command,
+                entrypoint="",  # Bypass the image's entrypoint
                 name=name,
                 network=self.network_name,
                 detach=True,
