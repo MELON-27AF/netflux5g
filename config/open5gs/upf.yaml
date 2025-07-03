@@ -34,5 +34,5 @@ upf:
 # SMF configuration for UPF
 smf:
   pfcp:
-    - addr: smf
+    - addr: smf-test
       port: 8805

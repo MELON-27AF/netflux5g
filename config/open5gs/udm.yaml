@@ -35,5 +35,5 @@ udm:
 
 nrf:
   sbi:
-    - addr: nrf
+    - addr: nrf-test
       port: 7777
