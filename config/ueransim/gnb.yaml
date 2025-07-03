@@ -17,7 +17,7 @@ gtpIp: 10.45.0.11 # gNB's IP address for N3 Interface
 
 # List of AMF configurations
 amfConfigs:
-  - address: amf-test # AMF IP address or hostname
+  - address: 10.45.0.5 # AMF IP address (amf-test container)
     port: 38412 # AMF port for NGAP
 
 # List of supported S-NSSAIs by this gNB
