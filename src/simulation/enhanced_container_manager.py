@@ -141,7 +141,7 @@ class EnhancedContainerManager:
         self.network_config = {
             "router": {
                 "image": "alpine:latest",
-                "command": ["sh", "-c", "apk add --no-cache iptables && sleep infinity"],
+                "command": ["sh", "-c", "echo 'nameserver 8.8.8.8' > /etc/resolv.conf && echo 'nameserver 8.8.4.4' >> /etc/resolv.conf && apk update && apk add --no-cache iptables || sleep infinity"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
@@ -150,7 +150,7 @@ class EnhancedContainerManager:
             },
             "internet-gw": {
                 "image": "alpine:latest",
-                "command": ["sh", "-c", "apk add --no-cache iptables curl nmap-ncat && echo 'nameserver 8.8.8.8' > /etc/resolv.conf && sleep infinity"],
+                "command": ["sh", "-c", "echo 'nameserver 8.8.8.8' > /etc/resolv.conf && echo 'nameserver 8.8.4.4' >> /etc/resolv.conf && apk update && apk add --no-cache iptables curl nmap-ncat || sleep infinity"],
                 "cap_add": ["NET_ADMIN"],
                 "privileged": True,
                 "volumes": {},
